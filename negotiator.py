@@ -151,6 +151,12 @@ Dostupné příkazy:
     }
 }
 
+CURRENCY_SETTINGS = {
+    'en': {'symbol': '$', 'position': 'before'},  # $100
+    'cs': {'symbol': 'Kč', 'position': 'after'},  # 100 Kč
+    'uk': {'symbol': '₴', 'position': 'before'}   # ₴100
+}
+
 class NegotiationSession:
     """Handles price comparison and deal validation for negotiation sessions."""
     
