@@ -1,28 +1,3 @@
-def get_user_language(user_id: int) -> str:
-    """Get user's preferred language from database."""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS user_preferences (
-            user_id INTEGER PRIMARY KEY,
-            language TEXT DEFAULT 'en'
-        )
-    ''')
-    conn.commit()
-    
-    cursor.execute('SELECT language FROM user_preferences WHERE user_id = ?', (user_id,))
-    result = cursor.fetchone()
-    return result[0] if result else 'en'
-
-def set_user_language(user_id: int, language: str) -> None:
-    """Set user's preferred language in database."""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO user_preferences (user_id, language)
-        VALUES (?, ?)
-    ''', (user_id, language))
-    conn.commit()
 import os
 import logging
 import sqlite3
@@ -89,6 +64,8 @@ TRANSLATIONS = {
         'enter_new_amount': "Please enter your new amount:",
         'no_active_session': "No active negotiation found.",
         'no_bid': "No bid set yet.",
+        'click_to_respond': "Click here to respond",  # English
+        'expires_in': "Session expires in",
         'help_text': """
 Available commands:
 /start - Begin new negotiation
@@ -123,6 +100,8 @@ Available commands:
         'enter_new_amount': "Prosím zadejte novou částku:",
         'no_active_session': "Nenalezeno žádné aktivní vyjednávání.",
         'no_bid': "Zatím nebyla zadána žádná nabídka.",
+        'click_to_respond': "Klikněte zde pro odpověď",  # Czech
+        'expires_in': "Relace vyprší za",
         'help_text': """
 Dostupné příkazy:
 /start - Začít nové vyjednávání
@@ -157,6 +136,8 @@ Dostupné příkazy:
         'enter_new_amount': "Будь ласка, введіть нову суму:",
         'no_active_session': "Активних переговорів не знайдено.",
         'no_bid': "Ще не встановлено ставку.",
+        'click_to_respond': "Натисніть тут, щоб відповісти",  # Ukrainian
+        'expires_in': "Сесія закінчується через",
         'help_text': """
 Доступні команди:
 /start - Почати нові переговори
@@ -292,18 +273,22 @@ def format_expiry_time(expires_at):
     return f"{hours}h" if hours > 1 else "soon"
 
 def create_message_for_user2(role, session_id, expires_at):
+    # Using the initiator's ID for translations since this message will be forwarded
+    session = sessions[session_id]
+    user_id = session['initiator_id']
+
     if role == 'buyer':
-        question = get_text('enter_amount_seller', session_id)
+        question = get_text('enter_amount_seller', user_id)
     else:
-        question = get_text('enter_amount_buyer', session_id)
+        question = get_text('enter_amount_buyer', user_id)
 
     deep_link = f"https://t.me/{BOT_USERNAME}?start={session_id}"
     expiry = format_expiry_time(expires_at)
 
     return (f"{BOT_NAME}\n"
             f"{question}\n\n"
-            f"👉 Click here to respond: {deep_link}\n"
-            f"⏳ Session expires in {expiry}")
+            f"👉 {get_text('click_to_respond', user_id)}: {deep_link}\n"
+            f"⏳ {get_text('expires_in', user_id)} {expiry}")
 
 def find_active_session(user_id):
     for session_id, session in sessions.items():
@@ -333,18 +318,6 @@ def handle_language_choice(message):
     chosen_lang = lang_map.get(message.text)
     if chosen_lang:
         set_user_language(message.from_user.id, chosen_lang)
-        bot.send_message(message.chat.id, get_text('language_set', message.from_user.id),
-                        reply_markup=types.ReplyKeyboardRemove())
-    else:
-        bot.send_message(message.chat.id, "Please select a language from the keyboard.")
-        return language_command(message)
-
-def get_text(key: str, user_id: int, **kwargs) -> str:
-    """Get translated text for given key and user."""
-    lang = get_user_language(user_id)
-    text = TRANSLATIONS[lang].get(key, TRANSLATIONS['en'][key])
-    return text.format(**kwargs) if kwargs else text
-set_user_language(message.from_user.id, chosen_lang)
         bot.send_message(message.chat.id, get_text('language_set', message.from_user.id),
                         reply_markup=types.ReplyKeyboardRemove())
     else:
