@@ -3,10 +3,20 @@ from telebot import types
 from languages import TRANSLATIONS
 from database import get_user_language
 from utils.money import format_money
+from utils.translations import get_text
 from .negotiation import (
-    handle_user2_session, handle_role_choice, 
+    handle_user2_session, handle_role_choice,
     find_active_session, format_expiry_time
 )
+
+def get_text(key: str, user_id: int, **kwargs) -> str:
+    """Get translated text for given key and user."""
+    from languages import TRANSLATIONS
+    from database import get_user_language
+
+    lang = get_user_language(user_id)
+    text = TRANSLATIONS[lang].get(key, TRANSLATIONS['en'][key])
+    return text.format(**kwargs) if kwargs else text
 
 def start(message, bot, sessions, user_sessions):
     args = message.text.split()
@@ -18,12 +28,12 @@ def start(message, bot, sessions, user_sessions):
 
     keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     keyboard.add(
-        get_text('buyer', message.from_user.id), 
+        get_text('buyer', message.from_user.id),
         get_text('seller', message.from_user.id)
     )
     bot.send_message(
-        message.chat.id, 
-        get_text('choose_role', message.from_user.id), 
+        message.chat.id,
+        get_text('choose_role', message.from_user.id),
         reply_markup=keyboard
     )
     bot.register_next_step_handler(message, handle_role_choice, bot, sessions, user_sessions)
@@ -43,9 +53,9 @@ def status_command(message, bot, sessions):
             else session.get('invited_limit'))
 
     if limit:
-        status = get_text('confirm_pay' if role == 'buyer' else 'confirm_get', 
+        status = get_text('confirm_pay' if role == 'buyer' else 'confirm_get',
                          user_id, limit=format_money(limit, user_id))
-        expiry = get_text('waiting_for_seller' if role == 'buyer' else 'waiting_for_buyer', 
+        expiry = get_text('waiting_for_seller' if role == 'buyer' else 'waiting_for_buyer',
                          user_id, expires=format_expiry_time(session['expires_at']))
         bot.send_message(message.chat.id, f"{status}\n{expiry}")
     else:
@@ -59,3 +69,4 @@ def cancel_command(message, bot, sessions):
 def help_command(message, bot):
     help_text = get_text('help_text', message.from_user.id)
     bot.reply_to(message, help_text)
+

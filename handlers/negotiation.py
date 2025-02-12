@@ -1,14 +1,15 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from telebot import types
 from languages import TRANSLATIONS
 from database import get_user_language, save_session
 from utils.money import format_money
 from utils.time import format_expiry_time
+from utils.translations import get_text
 
 class NegotiationSession:
     def __init__(self, session_data: dict):
         self.session = session_data
-    
+
     def calculate_limits(self):
         if self.session['initiator_role'] == 'buyer':
             buyer_limit = self.session['initiator_limit']
@@ -22,10 +23,65 @@ class NegotiationSession:
         buyer_limit, seller_limit = self.calculate_limits()
         return buyer_limit >= seller_limit
 
+def handle_user2_session(message, bot, session_id, sessions):
+    session = sessions[session_id]
+    user_id = message.from_user.id
+
+    if user_id == session['initiator_id']:
+        bot.send_message(message.chat.id, get_text('cant_join_own', user_id))
+        return
+
+    if 'invited_id' in session:
+        bot.send_message(message.chat.id, get_text('session_invalid', user_id))
+        return
+
+    if session['expires_at'] < datetime.now():
+        bot.send_message(message.chat.id, get_text('session_expired', user_id))
+        return
+
+    other_role = 'seller' if session['initiator_role'] == 'buyer' else 'buyer'
+    prompt = get_text('enter_amount_buyer', user_id) if other_role == 'buyer' else get_text('enter_amount_seller', user_id)
+
+    session['invited_id'] = user_id
+    save_session(session_id, sessions)
+
+    bot.send_message(message.chat.id, prompt)
+    bot.register_next_step_handler(message, process_limit, bot, sessions)
+
+def handle_role_choice(message, bot, sessions, user_sessions):
+    user_id = message.from_user.id
+    role = message.text.lower()
+
+    if role not in [get_text('buyer', user_id).lower(), get_text('seller', user_id).lower()]:
+        from .commands import start  # Import here to avoid circular import
+        return start(message, bot, sessions, user_sessions)
+
+    role = 'buyer' if role == get_text('buyer', user_id).lower() else 'seller'
+
+    session_id = f"session_{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    expires_at = datetime.now() + timedelta(hours=24)
+
+    sessions[session_id] = {
+        'initiator_id': user_id,
+        'initiator_role': role,
+        'status': 'pending',
+        'created_at': datetime.now(),
+        'expires_at': expires_at
+    }
+    save_session(session_id, sessions)
+
+    if user_id not in user_sessions:
+        user_sessions[user_id] = []
+    user_sessions[user_id].append(session_id)
+
+    question = get_text('enter_amount_buyer', user_id) if role == 'buyer' else get_text('enter_amount_seller', user_id)
+    bot.send_message(message.chat.id, question, reply_markup=types.ReplyKeyboardRemove())
+    bot.register_next_step_handler(message, process_limit_and_invite, bot, sessions, user_sessions)
+
 def create_message_for_user2(bot, role, session_id, expires_at, sessions):
     session = sessions[session_id]
     user_id = session['initiator_id']
-    
+
     if role == 'buyer':
         question = get_text('enter_amount_seller', user_id)
     else:
@@ -55,7 +111,7 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
     save_session(session_id, sessions)
 
     role = session['initiator_role']
-    confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get', 
+    confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get',
                           user_id, limit=format_money(limit, user_id))
     bot.send_message(message.chat.id, f"✅ {confirmation}")
 
@@ -90,9 +146,9 @@ def process_limit(message, bot, sessions):
     role = 'buyer' if ((session['initiator_id'] == user_id and session['initiator_role'] == 'buyer') or
                       (session['invited_id'] == user_id and session['initiator_role'] != 'buyer')) else 'seller'
 
-    confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get', 
+    confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get',
                           user_id, limit=format_money(limit, user_id))
-    waiting_msg = get_text('waiting_for_seller' if role == 'buyer' else 'waiting_for_buyer', 
+    waiting_msg = get_text('waiting_for_seller' if role == 'buyer' else 'waiting_for_buyer',
                           user_id, expires=format_expiry_time(session['expires_at']))
 
     if user_id == session.get('initiator_id'):
@@ -147,3 +203,14 @@ def compare_limits(session_id, bot, sessions):
             bot.register_next_step_handler_by_chat_id(session['invited_id'], process_limit, bot, sessions)
     except Exception as e:
         print(f"Error in compare_limits: {e}")
+
+def find_active_session(user_id, sessions):
+    for session_id, session in sessions.items():
+        if ((session.get('initiator_id') == user_id or session.get('invited_id') == user_id) and
+            session.get('status') in ['pending', 'awaiting_updates']):
+            if session['expires_at'] > datetime.now():
+                return session_id
+            else:
+                session['status'] = 'expired'
+                save_session(session_id, sessions, 'expired')
+    return None
