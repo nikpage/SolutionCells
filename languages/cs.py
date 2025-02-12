@@ -1,4 +1,4 @@
-    'cs': {
+CZECH = {
         'choose_role': "Vyberte svoji roli:",
         'buyer': "Kupující",
         'seller': "Prodávající",

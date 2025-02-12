@@ -1,4 +1,4 @@
-  'uk': {
+ UKRAINIAN = {
         'choose_role': "Оберіть свою роль:",
         'buyer': "Покупець",
         'seller': "Продавець",
