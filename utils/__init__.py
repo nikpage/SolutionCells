@@ -1,1 +1,2 @@
+"""Translation initialization module"""
 
