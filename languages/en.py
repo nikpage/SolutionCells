@@ -32,5 +32,6 @@ Available commands:
 /language - Change language
     """,
     'choose_language': "Please select your language:",
-    'language_set': "Language set to English"
+    'language_set': "Language set to English",
+    'help': 'Help'
 }

@@ -1,36 +1,75 @@
 CZECH = {
-        'choose_role': "Vyberte svoji roli:",
-        'buyer': "Kupující",
-        'seller': "Prodávající",
-        'enter_amount_buyer': "Kolik byste byli ochotni zaplatit?",
-        'enter_amount_seller': "Kolik byste chtěli dostat?",
-        'invalid_number': "Prosím zadejte platné kladné číslo.",
-        'cant_join_own': "Nemůžete se připojit k vlastnímu vyjednávání.",
-        'session_invalid': "Toto vyjednávací sezení již není platné.",
-        'session_expired': "Toto vyjednávací sezení vypršelo.",
-        'forward_message': "Pro pokračování přepošlete tuto zprávu:",
-        'confirm_pay': "Byli byste ochotni zaplatit ${limit}",
-        'confirm_get': "Byli byste ochotni přijmout ${limit}",
-        'waiting_for_buyer': "⏳ Čekání na kupujícího. Vyprší za {expires}",
-        'waiting_for_seller': "⏳ Čekání na prodávajícího. Vyprší za {expires}",
-        'deal_success': "Gratulujeme, jste ve stejném cenovém rozmezí! ✅",
-        'deal_failed': "Nejste v cenovém rozmezí.\nZadejte novou částku pro pokračování, nebo napište 'stop' pro ukončení.",
-        'end_confirm': "Napište 'end' pro ukončení vyjednávání, nebo pokračujte novou částkou",
-        'negotiation_ended': "Vyjednávání ukončeno.",
-        'other_party_ended': "Druhá strana ukončila vyjednávání.",
-        'enter_new_amount': "Prosím zadejte novou částku:",
-        'no_active_session': "Nenalezeno žádné aktivní vyjednávání.",
-        'no_bid': "Zatím nebyla zadána žádná nabídka.",
-        'click_to_respond': "Klikněte zde pro odpověď",  # Czech
-        'expires_in': "Relace vyprší za",
-        'help_text': """
-Dostupné příkazy:
+    'buyer': 'Kupující',
+    'seller': 'Prodávající',
+    'choose_role': 'Vyberte svou roli:',
+    'cant_join_own': 'Nemůžete se připojit k vlastnímu vyjednávání.',
+    'session_invalid': 'Tato relace vyjednávání již není platná.',
+    'session_expired': 'Tato relace vyjednávání vypršela.',
+    'invalid_number': '❌ Prosím zadejte platné číslo',
+    'example': 'Příklad',
+    'confirm_pay': 'Jste ochotni zaplatit: {limit}',
+    'confirm_get': 'Chcete získat: {limit}',
+    'waiting_for_seller': '⏳ Čekání na prodávajícího (vyprší za {expires})',
+    'waiting_for_buyer': '⏳ Čekání na kupujícího (vyprší za {expires})',
+    'deal_success': '🎉 Dohoda uzavřena!',
+    'deal_failed': 'Zatím bez dohody - rozdíl v ceně',
+    'end_confirm': "Napište 'end' pro ukončení vyjednávání, nebo pokračujte s novou částkou",
+    'negotiation_ended': "Vyjednávání ukončeno.",
+    'other_party_ended': "Druhá strana ukončila vyjednávání.",
+    'enter_new_amount': "Zadejte novou částku:",
+    'no_active_session': "Nenalezeno žádné aktivní vyjednávání.",
+    'no_bid': "Zatím nebyla stanovena žádná nabídka.",
+    'enter_amount_buyer': "Kolik jste ochotni zaplatit?",
+    'enter_amount_seller': "Kolik chcete získat?",
+    'click_to_respond': "Klikněte zde pro odpověď",
+    'expires_in': "Relace vyprší za",
+    
+    # Progress indicators
+    'step_select_role': 'Krok 1: Vyberte svou roli',
+    'step_amount': 'Krok 2: Částka nastavena',
+    'step_share': 'Krok 3: Sdílet a čekat',
+    'step_complete': 'Krok 4: Vyjednávání dokončeno',
+    
+    # Button texts
+    'share_link': 'Sdílet odkaz',
+    'change_amount': 'Změnit částku',
+    'new_amount': 'Zkusit novou částku',
+    'cancel': 'Zrušit',
+    'end_negotiation': 'Ukončit vyjednávání',
+    'new_negotiation': 'Začít nové vyjednávání',
+    
+    # Result messages
+    'final_amount': 'Dohodnutá částka',
+    'deal_complete': 'Vyjednávání úspěšně dokončeno!',
+    'price_difference': 'Aktuální nabídky',
+    'buyer_offers': 'Kupující nabízí',
+    'seller_wants': 'Prodávající požaduje',
+    'try_new_amount': 'Zkuste navrhnout novou částku pro dosažení dohody',
+    
+    # Help and settings
+    'help_text': """
+📋 Dostupné příkazy:
 /start - Začít nové vyjednávání
-/status - Zkontrolovat aktuální nabídku
-/cancel - Ukončit vyjednávání
+/status - Zkontrolovat vaši aktuální nabídku
+/cancel - Ukončit aktuální vyjednávání
 /help - Zobrazit tuto nápovědu
 /language - Změnit jazyk
-        """,
-        'choose_language': "Prosím vyberte jazyk:",
-        'language_set': "Jazyk nastaven na češtinu"
-    }
+    """,
+    'choose_language': "🌐 Vyberte prosím jazyk:",
+    'language_set': "✅ Jazyk nastaven na češtinu",
+    
+    # Additional UX keys
+    'welcome': 'Vítejte v Negotiation Bot',
+    'your_role': 'Vaše role',
+    'your_amount': 'Vaše částka',
+    'waiting_for_other': 'Čekání na druhou stranu',
+    'amount_set': 'Částka úspěšně nastavena',
+    'check_status': 'Zkontrolovat stav',
+    'change_language': 'Změnit jazyk',
+    'help': 'Nápověda',
+    'joined_negotiation': 'Připojili jste se k vyjednávací relaci',
+    
+    # Error messages
+    'button_expired': 'Toto tlačítko vypršelo. Odesílám novou zprávu...',
+    'error_occurred': 'Došlo k chybě. Zkuste to prosím znovu.'
+}
