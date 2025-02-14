@@ -1,9 +1,10 @@
 #adadadad
+
 import os
 import logging
 import telebot
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
+
 # Import handlers
 from handlers.language import language_command, handle_language_choice
 from handlers.negotiation import (
@@ -13,6 +14,7 @@ from handlers.negotiation import (
 from handlers.commands import (
     start, status_command, cancel_command, help_command
 )
+
 # Import database
 from database import get_db
 
@@ -26,14 +28,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Starting bot...")
 
-# Load environment variables
-load_dotenv()
-TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-if not TOKEN:
-    logger.error("No TELEGRAM_BOT_TOKEN found in environment variables")
-    exit(1)
-
 # Bot initialization
+TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 bot = telebot.TeleBot(TOKEN)
 BOT_INFO = bot.get_me()
 BOT_NAME = BOT_INFO.first_name

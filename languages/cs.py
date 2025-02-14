@@ -23,8 +23,30 @@ CZECH = {
     'enter_amount_seller': "Kolik chcete získat?",
     'click_to_respond': "Klikněte zde pro odpověď",
     'expires_in': "Relace vyprší za",
-    'welcome': 'Vítejte v Negotiation Bot',
-    'help': 'Nápověda',
+    
+    # Progress indicators
+    'step_select_role': 'Krok 1: Vyberte svou roli',
+    'step_amount': 'Krok 2: Částka nastavena',
+    'step_share': 'Krok 3: Sdílet a čekat',
+    'step_complete': 'Krok 4: Vyjednávání dokončeno',
+    
+    # Button texts
+    'share_link': 'Sdílet odkaz',
+    'change_amount': 'Změnit částku',
+    'new_amount': 'Zkusit novou částku',
+    'cancel': 'Zrušit',
+    'end_negotiation': 'Ukončit vyjednávání',
+    'new_negotiation': 'Začít nové vyjednávání',
+    
+    # Result messages
+    'final_amount': 'Dohodnutá částka',
+    'deal_complete': 'Vyjednávání úspěšně dokončeno!',
+    'price_difference': 'Aktuální nabídky',
+    'buyer_offers': 'Kupující nabízí',
+    'seller_wants': 'Prodávající požaduje',
+    'try_new_amount': 'Zkuste navrhnout novou částku pro dosažení dohody',
+    
+    # Help and settings
     'help_text': """
 📋 Dostupné příkazy:
 /start - Začít nové vyjednávání
@@ -33,31 +55,6 @@ CZECH = {
 /help - Zobrazit tuto nápovědu
 /language - Změnit jazyk
     """,
-    'step_select_role': 'Krok 1: Vyberte svou roli',
-    'step_amount': 'Krok 2: Částka nastavena',
-    'step_share': 'Krok 3: Sdílet a čekat',
-    'step_complete': 'Krok 4: Vyjednávání dokončeno',
-    'share_link': 'Sdílet odkaz',
-    'change_amount': 'Změnit částku',
-    'new_amount': 'Zkusit novou částku',
-    'cancel': 'Zrušit',
-    'end_negotiation': 'Ukončit vyjednávání',
-    'new_negotiation': 'Začít nové vyjednávání',
-    'final_amount': 'Dohodnutá částka',
-    'deal_complete': 'Vyjednávání úspěšně dokončeno!',
-    'price_difference': 'Aktuální nabídky',
-    'buyer_offers': 'Kupující nabízí',
-    'seller_wants': 'Prodávající požaduje',
-    'try_new_amount': 'Zkuste navrhnout novou částku pro dosažení dohody',
     'choose_language': "🌐 Vyberte prosím jazyk:",
-    'language_set': "✅ Jazyk nastaven na češtinu",
-    'your_role': 'Vaše role',
-    'your_amount': 'Vaše částka',
-    'waiting_for_other': 'Čekání na druhou stranu',
-    'amount_set': 'Částka úspěšně nastavena',
-    'check_status': 'Zkontrolovat stav',
-    'change_language': 'Změnit jazyk',
-    'joined_negotiation': 'Připojili jste se k vyjednávací relaci',
-    'button_expired': 'Toto tlačítko vypršelo. Odesílám novou zprávu...',
-    'error_occurred': 'Došlo k chybě. Zkuste to prosím znovu.'
+    'language_set': "✅ Jazyk nastaven na češtinu"
 }
