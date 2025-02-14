@@ -29,11 +29,17 @@ logger = logging.getLogger(__name__)
 logger.info("Starting bot...")
 
 # Bot initialization
-TOKEN = "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk"  # Replace with actual token
+TOKEN = "6893316730:AAEtL_IWxSx5xp1oDQFjacNGs9WVDcespF0"
 bot = telebot.TeleBot(TOKEN)
-BOT_INFO = bot.get_me()
-BOT_NAME = BOT_INFO.first_name
-BOT_USERNAME = BOT_INFO.username
+
+try:
+    BOT_INFO = bot.get_me()
+    BOT_NAME = BOT_INFO.first_name
+    BOT_USERNAME = BOT_INFO.username
+    logger.info(f"Successfully connected to bot {BOT_NAME}")
+except Exception as e:
+    logger.error(f"Failed to initialize bot: {str(e)}")
+    raise e
 
 # Global state
 sessions = {}
@@ -64,7 +70,8 @@ def handle_help(message):
 if __name__ == '__main__':
     try:
         get_db()  # Initialize database
-        logger.info(f"Bot started as {BOT_NAME}")
+        logger.info("Starting infinity polling...")
         bot.infinity_polling()
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error during bot execution: {str(e)}")
+        raise e
