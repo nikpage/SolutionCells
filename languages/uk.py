@@ -1,5 +1,3 @@
-
-#test
 UKRAINIAN = {
 'buyer': 'Покупець',
 'seller': 'Продавець',
