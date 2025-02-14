@@ -32,5 +32,82 @@ Available commands:
 /language - Change language
     """,
     'choose_language': "Please select your language:",
-    'language_set': "Language set to English"
+    'language_set': "Language set to English",
+    'help': 'Help'
+}
+
+CZECH = {
+    'choose_role': "Vyberte si roli:",
+    'buyer': "Kupující",
+    'seller': "Prodejce",
+    'enter_amount_buyer': "Kolik byste byli ochotni zaplatit?",
+    'enter_amount_seller': "Kolik byste byli ochotni dostat?",
+    'invalid_number': "Zadejte platné kladné číslo.",
+    'cant_join_own': "Nemůžete se připojit k vlastnímu vyjednávání.",
+    'session_invalid': "Tato vyjednávací relace již není platná.",
+    'session_expired': "Tato vyjednávací relace vypršela.",
+    'forward_message': "Přepošlete tuto zprávu pro pokračování:",
+    'confirm_pay': "Byli byste ochotni zaplatit {limit}",
+    'confirm_get': "Byli byste ochotni dostat {limit}",
+    'waiting_for_buyer': "⏳ Čeká se na kupujícího. Vyprší za {expires}",
+    'waiting_for_seller': "⏳ Čeká se na prodejce. Vyprší za {expires}",
+    'deal_success': "Gratulujeme, jste oba ve stejném rozmezí! ✅",
+    'deal_failed': "Nejste v rozmezí.\nZadejte novou částku pro pokračování v nabízení, nebo napište 'stop' pro ukončení vyjednávání.",
+    'end_confirm': "Napište 'end' pro ukončení vyjednávání, nebo pokračujte s novou částkou",
+    'negotiation_ended': "Vyjednávání ukončeno.",
+    'other_party_ended': "Druhá strana ukončila vyjednávání.",
+    'enter_new_amount': "Zadejte svou novou částku:",
+    'no_active_session': "Nebylo nalezeno žádné aktivní vyjednávání.",
+    'no_bid': "Žádná nabídka zatím nebyla nastavena.",
+    'click_to_respond': "Klikněte zde pro odpověď",
+    'expires_in': "Relace vyprší za",
+    'help_text': """
+Dostupné příkazy:
+/start - Zahájit nové vyjednávání
+/status - Zkontrolujte svou aktuální nabídku
+/cancel - Ukončit aktuální vyjednávání
+/help - Zobrazit tuto nápovědu
+/language - Změnit jazyk
+    """,
+    'choose_language': "Vyberte si jazyk:",
+    'language_set': "Jazyk nastaven na češtinu",
+    'help': 'Nápověda'
+}
+
+UKRAINIAN = {
+    'choose_role': "Виберіть свою роль:",
+    'buyer': "Покупець",
+    'seller': "Продавець",
+    'enter_amount_buyer': "Скільки ви готові заплатити?",
+    'enter_amount_seller': "Скільки ви готові отримати?",
+    'invalid_number': "Будь ласка, введіть дійсне позитивне число.",
+    'cant_join_own': "Ви не можете приєднатися до власних переговорів.",
+    'session_invalid': "Ця сесія переговорів більше не дійсна.",
+    'session_expired': "Ця сесія переговорів закінчилася.",
+    'forward_message': "Перешліть це повідомлення для продовження:",
+    'confirm_pay': "Ви готові заплатити {limit}",
+    'confirm_get': "Ви готові отримати {limit}",
+    'waiting_for_buyer': "⏳ Очікування покупця. Закінчується через {expires}",
+    'waiting_for_seller': "⏳ Очікування продавця. Закінчується через {expires}",
+    'deal_success': "Вітаємо, ви обидва в одному діапазоні! ✅",
+    'deal_failed': "Ви не в діапазоні.\nВведіть нову суму для продовження торгів, або напишіть 'stop' для зупинки переговорів.",
+    'end_confirm': "Напишіть 'end' для завершення переговорів, або продовжуйте з новою сумою",
+    'negotiation_ended': "Переговори завершено.",
+    'other_party_ended': "Інша сторона завершила переговори.",
+    'enter_new_amount': "Будь ласка, введіть нову суму:",
+    'no_active_session': "Активних переговорів не знайдено.",
+    'no_bid': "Ставка ще не встановлена.",
+    'click_to_respond': "Натисніть тут, щоб відповісти",
+    'expires_in': "Сесія закінчується через",
+    'help_text': """
+Доступні команди:
+/start - Почати нові переговори
+/status - Перевірте свою поточну ставку
+/cancel - Завершити поточні переговори
+/help - Показати це повідомлення довідки
+/language - Змінити мову
+    """,
+    'choose_language': "Будь ласка, виберіть свою мову:",
+    'language_set': "Мова встановлена на українську",
+    'help': 'Довідка'
 }
