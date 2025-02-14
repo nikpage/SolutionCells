@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 logger.info("Starting bot...")
 
 # Bot initialization
-TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+TOKEN = "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk"  # Replace with actual token
 bot = telebot.TeleBot(TOKEN)
 BOT_INFO = bot.get_me()
 BOT_NAME = BOT_INFO.first_name
