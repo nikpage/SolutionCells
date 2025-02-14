@@ -1,4 +1,3 @@
-#adadadad
 
 import os
 import logging
