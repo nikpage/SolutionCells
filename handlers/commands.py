@@ -3,11 +3,15 @@ from telebot import types
 from languages import TRANSLATIONS
 from database import get_user_language
 from utils.money import format_money
-from utils.translations import get_text
+from utils.translations import get_text as translate_text  # Rename to avoid conflicts
 from .negotiation import (
     handle_user2_session, handle_role_choice,
     find_active_session, format_expiry_time
 )
+
+def get_text(key: str, user_id: int, **kwargs) -> str:
+    """Wrapper for translate_text to ensure it's always available"""
+    return translate_text(key, user_id, **kwargs)
 
 def start(message, bot, sessions: dict, user_sessions: dict) -> None:
     """Handle the /start command."""
