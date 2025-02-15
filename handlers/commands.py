@@ -42,6 +42,7 @@ def handle_language_choice(message, bot):
             get_text('language_set', message.from_user.id),
             reply_markup=types.ReplyKeyboardRemove()
         )
+        print(f"Language changed to {chosen_lang} for user {message.from_user.id}")  # Debug logging
     else:
         bot.send_message(message.chat.id, "Please select a language from the keyboard.")
         return language_command(bot, message)
