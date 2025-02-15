@@ -28,6 +28,24 @@ def language_command(bot, message):
     )
     bot.register_next_step_handler(message, handle_language_choice, bot)
 
+def handle_language_choice(message, bot):
+    lang_map = {
+        'English 🇬🇧': 'en',
+        'Čeština 🇨🇿': 'cs',
+        'Українська 🇺🇦': 'uk'
+    }
+    chosen_lang = lang_map.get(message.text)
+    if chosen_lang:
+        set_user_language(message.from_user.id, chosen_lang)
+        bot.send_message(
+            message.chat.id,
+            get_text('language_set', message.from_user.id),
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+    else:
+        bot.send_message(message.chat.id, "Please select a language from the keyboard.")
+        return language_command(bot, message)
+
 def start(message, bot, session_manager, message_builder) -> None:
     """Handle the /start command."""
     args = message.text.split()
