@@ -56,7 +56,7 @@ def handle_user2_session(message, bot, session_id, sessions):
 
 def handle_role_choice(message, bot, sessions, user_sessions):
     user_id = message.from_user.id
-    role = message.text.lower()
+    role = message.text.lower().replace('🛒 ', '').replace('💰 ', '')  # Remove emojis before comparison
 
     if role not in [get_text('buyer', user_id).lower(), get_text('seller', user_id).lower()]:
         from .commands import start  # Import here to avoid circular import
