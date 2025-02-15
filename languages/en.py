@@ -9,7 +9,6 @@ ENGLISH = {
     'cant_join_own': "You can't join your own negotiation.",
     'session_invalid': "This negotiation session is no longer valid.",
     'session_expired': "This negotiation session has expired.",
-    'forward_message': "Forward this message to continue:",
     'confirm_pay': "You would be happy to pay {limit}",
     'confirm_get': "You would be happy to get {limit}",
     'waiting_for_buyer': "⏳ Waiting for buyer. Expires in {expires}",

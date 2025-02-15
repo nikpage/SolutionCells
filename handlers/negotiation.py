@@ -101,10 +101,10 @@ def create_message_for_user2(bot, role, session_id, expires_at, sessions):
     deep_link = f"https://t.me/{bot.get_me().username}?start={session_id}"
     expiry = format_expiry_time(expires_at)
 
-    # Create a forward-friendly message with clear instructions
+    # Create a forward-friendly message
     return (f"{bot.get_me().first_name}\n"
             f"💰 {question}\n\n"
-            f"⬇️ {deep_link}\n\n"
+            f"🔗 {deep_link}\n\n"
             f"⏳ {get_text('expires_in', user_id)} {expiry}")
 
 def process_limit_and_invite(message, bot, sessions, user_sessions):
@@ -125,7 +125,6 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
     session['initiator_limit'] = limit
     role = session['initiator_role']
     
-    # Send confirmation and invitation message
     confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get',
                           user_id, limit=format_money(limit, user_id))
     bot.send_message(message.chat.id, confirmation)
