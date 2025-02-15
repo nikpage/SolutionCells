@@ -116,7 +116,6 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
         if limit <= 0:
             raise ValueError()
     except ValueError:
-        # Add example with currency symbol
         example = format_money(1000, user_id)
         bot.send_message(
             message.chat.id, 
@@ -130,25 +129,13 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
     role = session['initiator_role']
     
     # First message with amount confirmation
-    confirmation = f"💰 {get_text('step_amount', user_id)}\n"
-    confirmation += get_text('confirm_pay' if role == 'buyer' else 'confirm_get', 
+    confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get',
                           user_id, limit=format_money(limit, user_id))
-    
-    bot.send_message(
-        message.chat.id,
-        confirmation,
-        reply_markup=types.ReplyKeyboardRemove()
-    )
+    bot.send_message(message.chat.id, confirmation)
 
-    # Create forward-friendly invitation message
-    deep_link = f"https://t.me/{bot.get_me().username}?start={session_id}"
-    invitation_msg = create_message_for_user2(bot, role, session_id, session['expires_at'], sessions)
-    
-    # Send the invitation message for forwarding
-    bot.send_message(
-        message.chat.id,
-        invitation_msg
-    )
+    # Create invitation message for forwarding
+    invite_msg = create_message_for_user2(bot, role, session_id, session['expires_at'], sessions)
+    bot.send_message(message.chat.id, invite_msg)
     
     save_session(session_id, sessions)
 
