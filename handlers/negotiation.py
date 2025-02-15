@@ -104,6 +104,8 @@ def process_limit_and_invite(message, bot, session_manager, message_builder):
 
     invite_msg = message_builder.build_invitation(session, session.initiator_role)
     bot.send_message(message.chat.id, invite_msg)
+    
+    save_session(session_id, session)
 
 def process_limit(message, bot, session_manager):
     user_id = message.from_user.id
