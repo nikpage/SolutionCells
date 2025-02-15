@@ -2,7 +2,7 @@
 import os
 import logging
 import telebot
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Import handlers
 from handlers.language import language_command, handle_language_choice
@@ -14,8 +14,10 @@ from handlers.commands import (
     start, status_command, cancel_command, help_command
 )
 
-# Import database
+# Import utils
 from database import get_db
+from utils.session import SessionManager
+from utils.message import MessageBuilder
 
 # Setup logging
 logging.basicConfig(
@@ -40,15 +42,14 @@ except Exception as e:
     logger.error(f"Failed to initialize bot: {str(e)}")
     raise e
 
-# Global state
-sessions = {}
-user_sessions = {}
-SESSION_TIMEOUT = 24
+# Initialize global managers
+session_manager = SessionManager(timeout_hours=24)
+message_builder = MessageBuilder(BOT_NAME, BOT_USERNAME)
 
 # Command handlers
 @bot.message_handler(commands=['start'])
 def start_command(message):
-    start(message, bot, sessions, user_sessions)
+    start(message, bot, session_manager, message_builder)
 
 @bot.message_handler(commands=['language'])
 def handle_language(message):
@@ -56,11 +57,11 @@ def handle_language(message):
 
 @bot.message_handler(commands=['status'])
 def handle_status(message):
-    status_command(message, bot, sessions)
+    status_command(message, bot, session_manager)
 
 @bot.message_handler(commands=['cancel'])
 def handle_cancel(message):
-    cancel_command(message, bot, sessions)
+    cancel_command(message, bot, session_manager)
 
 @bot.message_handler(commands=['help'])
 def handle_help(message):
