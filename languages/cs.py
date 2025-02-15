@@ -1,4 +1,5 @@
 CZECH = {
+    'welcome': 'Vítejte v Negotiation Bot',
     'buyer': 'Kupující',
     'seller': 'Prodávající',
     'choose_role': 'Vyberte svou roli:',

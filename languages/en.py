@@ -1,4 +1,5 @@
 ENGLISH = {
+    'welcome': 'Welcome to Negotiation Bot',
     'choose_role': "Choose your role:",
     'buyer': "Buyer",
     'seller': "Seller",
@@ -23,8 +24,32 @@ ENGLISH = {
     'no_bid': "No bid set yet.",
     'click_to_respond': "Click here to respond",
     'expires_in': "Session expires in",
+    
+    # Progress indicators
+    'step_select_role': 'Step 1: Choose your role',
+    'step_amount': 'Step 2: Amount set',
+    'step_share': 'Step 3: Share and wait',
+    'step_complete': 'Step 4: Negotiation complete',
+    
+    # Button texts
+    'share_link': 'Share link',
+    'change_amount': 'Change amount',
+    'new_amount': 'Try new amount',
+    'cancel': 'Cancel',
+    'end_negotiation': 'End negotiation',
+    'new_negotiation': 'Start new negotiation',
+    
+    # Result messages
+    'final_amount': 'Agreed amount',
+    'deal_complete': 'Negotiation successfully completed!',
+    'price_difference': 'Current offers',
+    'buyer_offers': 'Buyer offers',
+    'seller_wants': 'Seller wants',
+    'try_new_amount': 'Try suggesting a new amount to reach agreement',
+    
+    # Help and settings
     'help_text': """
-Available commands:
+📋 Available commands:
 /start - Begin new negotiation
 /status - Check your current bid
 /cancel - End current negotiation
@@ -33,7 +58,20 @@ Available commands:
     """,
     'choose_language': "Please select your language:",
     'language_set': "Language set to English",
-    'help': 'Help'
+    'help': 'Help',
+    
+    # Additional UX keys
+    'your_role': 'Your role',
+    'your_amount': 'Your amount',
+    'waiting_for_other': 'Waiting for other party',
+    'amount_set': 'Amount successfully set',
+    'check_status': 'Check status',
+    'change_language': 'Change language',
+    'joined_negotiation': 'You joined the negotiation session',
+    
+    # Error messages
+    'button_expired': 'This button has expired. Sending new message...',
+    'error_occurred': 'An error occurred. Please try again.'
 }
 
 CZECH = {
