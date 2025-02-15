@@ -160,17 +160,18 @@ def process_limit(message, bot, sessions):
                       
     confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get',
                           user_id, limit=format_money(limit, user_id))
-    waiting_msg = get_text('waiting_for_seller' if role == 'buyer' else 'waiting_for_buyer',
-                          user_id, expires=format_expiry_time(session['expires_at']))
     
     if user_id == session.get('initiator_id'):
         session['initiator_limit'] = limit
+        # Only show waiting message to initiator
+        waiting_msg = get_text('waiting_for_seller' if role == 'buyer' else 'waiting_for_buyer',
+                             user_id, expires=format_expiry_time(session['expires_at']))
+        bot.send_message(message.chat.id, confirmation)
+        bot.send_message(message.chat.id, waiting_msg)
     else:
         session['invited_limit'] = limit
+        bot.send_message(message.chat.id, confirmation)
         
-    bot.send_message(message.chat.id, confirmation)
-    bot.send_message(message.chat.id, waiting_msg)
-    
     save_session(session_id, sessions)
     
     if 'initiator_limit' in session and 'invited_limit' in session:
