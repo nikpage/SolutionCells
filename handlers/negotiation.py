@@ -129,19 +129,11 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
     session['initiator_limit'] = limit
     role = session['initiator_role']
     
-    # Create deep link and generate invitation message
-    deep_link = f"https://t.me/{bot.get_me().username}?start={session_id}"
-    
-    # Format invitation message
+    # First message with amount confirmation
     confirmation = f"💰 {get_text('step_amount', user_id)}\n"
     confirmation += get_text('confirm_pay' if role == 'buyer' else 'confirm_get', 
                           user_id, limit=format_money(limit, user_id))
     
-    waiting_msg = f"🤝 {get_text('step_share', user_id)}\n"
-    waiting_msg += get_text('waiting_for_seller' if role == 'buyer' else 'waiting_for_buyer',
-                          user_id, expires=format_expiry_time(session['expires_at']))
-
-    # First message with amount confirmation
     bot.send_message(
         message.chat.id,
         confirmation,
@@ -149,32 +141,13 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
     )
 
     # Create forward-friendly invitation message
-    invitation_msg = f"{bot.get_me().first_name}\n\n"
-    invitation_msg += f"🔗 {get_text('click_to_respond', user_id)}:\n{deep_link}"
+    deep_link = f"https://t.me/{bot.get_me().username}?start={session_id}"
+    invitation_msg = create_message_for_user2(bot, role, session_id, session['expires_at'], sessions)
     
-    # Send invitation message with inline keyboard
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    share_button = types.InlineKeyboardButton(
-        text=f"📤 {get_text('share_link', user_id)}", 
-        url=deep_link
-    )
-    new_amount_button = types.InlineKeyboardButton(
-        text=f"💱 {get_text('change_amount', user_id)}", 
-        callback_data='new_amount'
-    )
-    cancel_button = types.InlineKeyboardButton(
-        text=f"❌ {get_text('cancel', user_id)}", 
-        callback_data='cancel'
-    )
-    
-    keyboard.add(share_button)
-    keyboard.row(new_amount_button, cancel_button)
-
-    # Send the invitation message separately for easy forwarding
+    # Send the invitation message for forwarding
     bot.send_message(
         message.chat.id,
-        invitation_msg,
-        reply_markup=keyboard
+        invitation_msg
     )
     
     save_session(session_id, sessions)
@@ -220,18 +193,8 @@ def process_limit(message, bot, sessions):
     status_msg += f"💰 {confirmation}\n"
     status_msg += f"⏳ {waiting_msg}"
     
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    new_amount_btn = types.InlineKeyboardButton(
-        text=f"💱 {get_text('change_amount', user_id)}", 
-        callback_data='new_amount'
-    )
-    cancel_btn = types.InlineKeyboardButton(
-        text=f"🚫 {get_text('cancel', user_id)}", 
-        callback_data='cancel'
-    )
-    keyboard.row(new_amount_btn, cancel_btn)
-    
-    bot.send_message(message.chat.id, status_msg, reply_markup=keyboard)
+    # Send message without inline keyboard since we don't have handlers
+    bot.send_message(message.chat.id, status_msg)
     save_session(session_id, sessions)
     
     if 'initiator_limit' in session and 'invited_limit' in session:
@@ -271,18 +234,10 @@ def compare_limits(session_id, bot, sessions):
         success_msg += f"💰 {get_text('final_amount', initiator_id)}: {seller_amount}\n"
         success_msg += f"🤝 {get_text('deal_complete', initiator_id)}"
         
-        # Add "New Negotiation" button
-        keyboard = types.InlineKeyboardMarkup()
-        new_deal_button = types.InlineKeyboardButton(
-            text=f"🔄 {get_text('new_negotiation', initiator_id)}", 
-            callback_data='new_negotiation'
-        )
-        keyboard.add(new_deal_button)
-        
         session['status'] = 'completed'
-        # Send success messages with button
-        bot.send_message(initiator_id, success_msg, reply_markup=keyboard)
-        bot.send_message(invited_id, success_msg, reply_markup=keyboard)
+        # Send success messages
+        bot.send_message(initiator_id, success_msg)
+        bot.send_message(invited_id, success_msg)
     else:
         # Create visual comparison message
         comparison_msg = f"❌ {get_text('deal_failed', initiator_id)}\n\n"
@@ -295,21 +250,9 @@ def compare_limits(session_id, bot, sessions):
         session['buyer_updated'] = False
         session['seller_updated'] = False
 
-        # Add retry keyboard
-        keyboard = types.InlineKeyboardMarkup(row_width=2)
-        retry_button = types.InlineKeyboardButton(
-            text=f"💱 {get_text('new_amount', initiator_id)}", 
-            callback_data='new_amount'
-        )
-        end_button = types.InlineKeyboardButton(
-            text=f"🚫 {get_text('end_negotiation', initiator_id)}", 
-            callback_data='end'
-        )
-        keyboard.row(retry_button, end_button)
-
-        # Send comparison messages with buttons
-        bot.send_message(initiator_id, comparison_msg, reply_markup=keyboard)
-        bot.send_message(invited_id, comparison_msg, reply_markup=keyboard)
+        # Send comparison messages 
+        bot.send_message(initiator_id, comparison_msg)
+        bot.send_message(invited_id, comparison_msg)
 
     save_session(session_id, sessions, session['status'])
 
