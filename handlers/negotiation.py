@@ -188,6 +188,8 @@ def handle_stop_confirmation(message, bot, sessions):
             bot.send_message(other_id, get_text('other_party_ended', other_id))
             session['status'] = 'ended'
             save_session(session_id, sessions, 'ended')
+            # Remove ended session from memory to allow new /start
+            del sessions[session_id]
     else:
         bot.send_message(message.chat.id, get_text('enter_new_amount', user_id))
         bot.register_next_step_handler(message, process_limit, bot, sessions)
