@@ -8,6 +8,7 @@ from .negotiation import (
     handle_user2_session, handle_role_choice,
     find_active_session, format_expiry_time
 )
+from .language import handle_language_choice
 
 def get_text(key: str, user_id: int, **kwargs) -> str:
     """Get translated text for given key and user."""
