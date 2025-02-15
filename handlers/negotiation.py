@@ -125,7 +125,6 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
     session['initiator_limit'] = limit
     role = session['initiator_role']
     
-    # Send confirmation and invitation message
     confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get',
                           user_id, limit=format_money(limit, user_id))
     bot.send_message(message.chat.id, confirmation)
