@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 logger.info("Starting bot...")
 
 # Bot initialization
-TOKEN = "6893316730:AAEtL_IWxSx5xp1oDQFjacNGs9WVDcespF0"
+TOKEN = "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk"
 bot = telebot.TeleBot(TOKEN)
 
 try:

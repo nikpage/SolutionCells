@@ -89,7 +89,10 @@ def handle_role_choice(message, bot, sessions, user_sessions):
     bot.send_message(message.chat.id, question, reply_markup=keyboard)
     bot.register_next_step_handler(message, process_limit_and_invite, bot, sessions, user_sessions)
 
-def create_message_for_user2(bot, role, session_id, expires_at):
+def create_message_for_user2(bot, role, session_id, expires_at, sessions):
+    session = sessions[session_id]
+    user_id = session['initiator_id']
+
     if role == 'buyer':
         question = get_text('enter_amount_seller', user_id)
     else:
@@ -125,7 +128,7 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
                           user_id, limit=format_money(limit, user_id))
     bot.send_message(message.chat.id, confirmation)
 
-    invite_msg = create_message_for_user2(bot, role, session_id, session['expires_at'])
+    invite_msg = create_message_for_user2(bot, role, session_id, session['expires_at'], sessions)
     bot.send_message(message.chat.id, invite_msg)
     
     save_session(session_id, sessions)
