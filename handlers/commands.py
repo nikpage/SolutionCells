@@ -18,6 +18,16 @@ def get_text(key: str, user_id: int, **kwargs) -> str:
     text = TRANSLATIONS[lang].get(key, TRANSLATIONS['en'][key])
     return text.format(**kwargs) if kwargs else text
 
+def language_command(bot, message):
+    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    keyboard.add('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+    bot.send_message(
+        message.chat.id,
+        get_text('choose_language', message.from_user.id),
+        reply_markup=keyboard
+    )
+    bot.register_next_step_handler(message, handle_language_choice, bot)
+
 def start(message, bot, session_manager, message_builder) -> None:
     """Handle the /start command."""
     args = message.text.split()
@@ -35,6 +45,7 @@ def start(message, bot, session_manager, message_builder) -> None:
         f"🛒 {get_text('buyer', user_id)}", 
         f"💰 {get_text('seller', user_id)}"
     )
+    keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
     
     welcome_msg = message_builder.build_welcome(user_id)
     
