@@ -42,7 +42,6 @@ def handle_user2_session(message, bot, session_id, sessions):
     other_role = 'seller' if session['initiator_role'] == 'buyer' else 'buyer'
     prompt = get_text('enter_amount_buyer', user_id) if other_role == 'buyer' else get_text('enter_amount_seller', user_id)
     
-    # Create keyboard with cancel button
     keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     keyboard.add('/cancel')
     
@@ -81,21 +80,16 @@ def handle_role_choice(message, bot, sessions, user_sessions):
         user_sessions[user_id] = []
     user_sessions[user_id].append(session_id)
 
-    # Add progress indicator and clearer instructions
     question = f"👥 {get_text('step_select_role', user_id)}\n"
     question += f"💰 {get_text('enter_amount_buyer', user_id)}" if role == 'buyer' else f"💰 {get_text('enter_amount_seller', user_id)}"
     
-    # Add cancel button to keyboard
     keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     keyboard.add('/cancel')
     
     bot.send_message(message.chat.id, question, reply_markup=keyboard)
     bot.register_next_step_handler(message, process_limit_and_invite, bot, sessions, user_sessions)
 
-def create_message_for_user2(bot, role, session_id, expires_at, sessions):
-    session = sessions[session_id]
-    user_id = session['initiator_id']
-
+def create_message_for_user2(bot, role, session_id, expires_at):
     if role == 'buyer':
         question = get_text('enter_amount_seller', user_id)
     else:
@@ -106,7 +100,7 @@ def create_message_for_user2(bot, role, session_id, expires_at, sessions):
 
     return (f"{bot.get_me().first_name}\n"
             f"{question}\n\n"
-            f"👉 {get_text('click_to_respond', user_id)}: {deep_link}\n"
+            f"👉 {get_text('forward_message', user_id)}\n"
             f"⏳ {get_text('expires_in', user_id)} {expiry}")
 
 def process_limit_and_invite(message, bot, sessions, user_sessions):
@@ -116,10 +110,9 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
         if limit <= 0:
             raise ValueError()
     except ValueError:
-        example = format_money(1000, user_id)
         bot.send_message(
             message.chat.id, 
-            f"{get_text('invalid_number', user_id)}\n💡 {get_text('example', user_id)}: {example}"
+            get_text('invalid_number', user_id)
         )
         return bot.register_next_step_handler(message, process_limit_and_invite, bot, sessions, user_sessions)
 
@@ -128,13 +121,11 @@ def process_limit_and_invite(message, bot, sessions, user_sessions):
     session['initiator_limit'] = limit
     role = session['initiator_role']
     
-    # First message with amount confirmation
     confirmation = get_text('confirm_pay' if role == 'buyer' else 'confirm_get',
                           user_id, limit=format_money(limit, user_id))
     bot.send_message(message.chat.id, confirmation)
 
-    # Create invitation message for forwarding
-    invite_msg = create_message_for_user2(bot, role, session_id, session['expires_at'], sessions)
+    invite_msg = create_message_for_user2(bot, role, session_id, session['expires_at'])
     bot.send_message(message.chat.id, invite_msg)
     
     save_session(session_id, sessions)
@@ -146,21 +137,17 @@ def process_limit(message, bot, sessions):
         if limit <= 0:
             raise ValueError()
     except ValueError:
-        # Add currency example
-        example = format_money(1000, user_id)
-        error_msg = f"❌ {get_text('invalid_number', user_id)}\n"
-        error_msg += f"💡 {get_text('example', user_id)}: {example}"
-        bot.send_message(message.chat.id, error_msg)
+        bot.send_message(message.chat.id, get_text('invalid_number', user_id))
         return bot.register_next_step_handler(message, process_limit, bot, sessions)
         
     session_id = find_active_session(user_id, sessions)
     if not session_id:
-        bot.send_message(message.chat.id, f"❌ {get_text('no_active_session', user_id)}")
+        bot.send_message(message.chat.id, get_text('no_active_session', user_id))
         return
         
     session = sessions[session_id]
     if session['expires_at'] < datetime.now():
-        bot.send_message(message.chat.id, f"⏰ {get_text('session_expired', user_id)}")
+        bot.send_message(message.chat.id, get_text('session_expired', user_id))
         return
         
     role = 'buyer' if ((session['initiator_id'] == user_id and session['initiator_role'] == 'buyer') or
@@ -176,12 +163,9 @@ def process_limit(message, bot, sessions):
     else:
         session['invited_limit'] = limit
         
-    status_msg = f"✅ {get_text('amount_set', user_id)}\n"
-    status_msg += f"💰 {confirmation}\n"
-    status_msg += f"⏳ {waiting_msg}"
+    bot.send_message(message.chat.id, confirmation)
+    bot.send_message(message.chat.id, waiting_msg)
     
-    # Send message without inline keyboard since we don't have handlers
-    bot.send_message(message.chat.id, status_msg)
     save_session(session_id, sessions)
     
     if 'initiator_limit' in session and 'invited_limit' in session:
@@ -210,36 +194,22 @@ def compare_limits(session_id, bot, sessions):
     initiator_id = session['initiator_id']
     invited_id = session['invited_id']
 
-    # Calculate amounts for display
     buyer_limit, seller_limit = negotiation.calculate_limits()
     buyer_amount = format_money(buyer_limit, initiator_id)
     seller_amount = format_money(seller_limit, initiator_id)
 
     if is_deal:
-        # Success message with visual comparison
-        success_msg = f"✅ {get_text('deal_success', initiator_id)}\n\n"
-        success_msg += f"💰 {get_text('final_amount', initiator_id)}: {seller_amount}\n"
-        success_msg += f"🤝 {get_text('deal_complete', initiator_id)}"
-        
+        success_msg = get_text('deal_success', initiator_id)
         session['status'] = 'completed'
-        # Send success messages
         bot.send_message(initiator_id, success_msg)
         bot.send_message(invited_id, success_msg)
     else:
-        # Create visual comparison message
-        comparison_msg = f"❌ {get_text('deal_failed', initiator_id)}\n\n"
-        comparison_msg += f"📊 {get_text('price_difference', initiator_id)}:\n"
-        comparison_msg += f"💰 {get_text('buyer_offers', initiator_id)}: {buyer_amount}\n"
-        comparison_msg += f"💰 {get_text('seller_wants', initiator_id)}: {seller_amount}\n\n"
-        comparison_msg += f"💡 {get_text('try_new_amount', initiator_id)}"
-
         session['status'] = 'awaiting_updates'
         session['buyer_updated'] = False
         session['seller_updated'] = False
-
-        # Send comparison messages 
-        bot.send_message(initiator_id, comparison_msg)
-        bot.send_message(invited_id, comparison_msg)
+        
+        bot.send_message(initiator_id, get_text('deal_failed', initiator_id))
+        bot.send_message(invited_id, get_text('deal_failed', invited_id))
 
     save_session(session_id, sessions, session['status'])
 
