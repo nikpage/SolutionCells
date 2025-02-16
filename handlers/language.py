@@ -23,9 +23,12 @@ def handle_language_choice(message, bot):
     chosen_lang = lang_map.get(message.text)
     if chosen_lang:
         set_user_language(message.from_user.id, chosen_lang)
+        # Restate the last step in the selected language
+        last_step = message.reply_to_message.text
+        translated_step = get_text(last_step, message.from_user.id)
         bot.send_message(
             message.chat.id,
-            get_text('language_set', message.from_user.id),
+            translated_step,
             reply_markup=types.ReplyKeyboardRemove()
         )
     else:
