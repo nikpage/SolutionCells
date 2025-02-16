@@ -126,6 +126,9 @@ def process_limit_and_invite(message, bot, session_manager, message_builder):
     keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
     bot.send_message(message.chat.id, invite_msg, reply_markup=keyboard)
 
+    # Register the next step handler to continue the negotiation process
+    bot.register_next_step_handler(message, process_limit, bot, session_manager)
+
 def process_limit(message, bot, session_manager):
     # Check if it's a language selection
     if message.text in ['English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦']:
@@ -139,7 +142,7 @@ def process_limit(message, bot, session_manager):
     except ValueError:
         keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
         keyboard.add('/cancel')
-        keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+        keyboard.row('English 🇬🇧', 'Čeština 🇨‚', 'Українська 🇺🇦')
         bot.send_message(message.chat.id, get_text('invalid_number', user_id), reply_markup=keyboard)
         return bot.register_next_step_handler(message, process_limit, bot, session_manager)
         
@@ -176,13 +179,13 @@ def process_limit(message, bot, session_manager):
 
 def handle_stop_confirmation(message, bot, session_manager):
     # Check if it's a language selection
-    if message.text in ['English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦']:
+    if message.text in ['English 🇬🇧', 'Čeština 🇨‚', 'Українська 🇺🇦']:
         return handle_language_choice(message, bot)
     
     user_id = message.from_user.id
     if message.text.lower() == 'end':
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+        keyboard.row('English 🇬🇧', 'Čeština 🇨‚', 'Українська 🇺🇦')
         bot.send_message(message.chat.id, get_text('negotiation_ended', user_id), reply_markup=keyboard)
         session_id = session_manager.find_active_session(user_id)
         if session_id:
@@ -193,7 +196,7 @@ def handle_stop_confirmation(message, bot, session_manager):
     else:
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard.add('/cancel')
-        keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+        keyboard.row('English 🇬‚', 'Čeština 🇨‚', 'Українська 🇺🇦')
         bot.send_message(message.chat.id, get_text('enter_new_amount', user_id), reply_markup=keyboard)
         bot.register_next_step_handler(message, process_limit, bot, session_manager)
 
