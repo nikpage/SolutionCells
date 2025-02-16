@@ -8,45 +8,7 @@ from .negotiation import (
     handle_user2_session, handle_role_choice,
     find_active_session, format_expiry_time
 )
-from .language import handle_language_choice
-
-def get_text(key: str, user_id: int, **kwargs) -> str:
-    """Get translated text for given key and user."""
-    from languages import TRANSLATIONS
-    from database import get_user_language
-
-    lang = get_user_language(user_id)
-    text = TRANSLATIONS[lang].get(key, TRANSLATIONS['en'][key])
-    return text.format(**kwargs) if kwargs else text
-
-def language_command(bot, message):
-    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    keyboard.add('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
-    bot.send_message(
-        message.chat.id,
-        get_text('choose_language', message.from_user.id),
-        reply_markup=keyboard
-    )
-    bot.register_next_step_handler(message, handle_language_choice, bot)
-
-def handle_language_choice(message, bot):
-    lang_map = {
-        'English 🇬🇧': 'en',
-        'Čeština 🇨🇿': 'cs',
-        'Українська 🇺🇦': 'uk'
-    }
-    chosen_lang = lang_map.get(message.text)
-    if chosen_lang:
-        set_user_language(message.from_user.id, chosen_lang)
-        bot.send_message(
-            message.chat.id,
-            get_text('language_set', message.from_user.id),
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        print(f"Language changed to {chosen_lang} for user {message.from_user.id}")  # Debug logging
-    else:
-        bot.send_message(message.chat.id, "Please select a language from the keyboard.")
-        return language_command(bot, message)
+from .language import language_command, handle_language_choice
 
 def start(message, bot, session_manager, message_builder) -> None:
     """Handle the /start command."""

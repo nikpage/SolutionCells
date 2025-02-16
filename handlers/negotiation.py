@@ -5,6 +5,7 @@ from database import get_user_language, save_session
 from utils.money import format_money
 from utils.time import format_expiry_time
 from utils.translations import get_text
+from .language import handle_language_choice
 
 class NegotiationSession:
     def __init__(self, session_data: dict):
@@ -24,6 +25,10 @@ class NegotiationSession:
         return buyer_limit >= seller_limit
 
 def handle_user2_session(message, bot, session_id, session_manager):
+    # Check if it's a language selection first
+    if message.text in ['English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦']:
+        return handle_language_choice(message, bot)
+
     session = session_manager.get_session(session_id)
     if not session:
         return
@@ -59,6 +64,11 @@ def handle_user2_session(message, bot, session_id, session_manager):
 
 def handle_role_choice(message, bot, session_manager, message_builder):
     user_id = message.from_user.id
+    
+    # Check if it's a language selection
+    if message.text in ['English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦']:
+        return handle_language_choice(message, bot)
+    
     role = message.text.lower().replace('🛒 ', '').replace('💰 ', '')
 
     if role not in [get_text('buyer', user_id).lower(), get_text('seller', user_id).lower()]:
@@ -74,11 +84,16 @@ def handle_role_choice(message, bot, session_manager, message_builder):
     
     keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     keyboard.add('/cancel')
+    keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
     
     bot.send_message(message.chat.id, question, reply_markup=keyboard)
     bot.register_next_step_handler(message, process_limit_and_invite, bot, session_manager, message_builder)
 
 def process_limit_and_invite(message, bot, session_manager, message_builder):
+    # Check if it's a language selection
+    if message.text in ['English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦']:
+        return handle_language_choice(message, bot)
+    
     user_id = message.from_user.id
     try:
         limit = int(message.text)
@@ -89,6 +104,10 @@ def process_limit_and_invite(message, bot, session_manager, message_builder):
             message.chat.id, 
             get_text('invalid_number', user_id)
         )
+        keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        keyboard.add('/cancel')
+        keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+        bot.send_message(message.chat.id, "Please enter a valid number:", reply_markup=keyboard)
         return bot.register_next_step_handler(message, process_limit_and_invite, bot, session_manager, message_builder)
 
     session_id = session_manager.find_active_session(user_id)
@@ -103,18 +122,27 @@ def process_limit_and_invite(message, bot, session_manager, message_builder):
     bot.send_message(message.chat.id, confirmation)
 
     invite_msg = message_builder.build_invitation(session, session.initiator_role)
-    bot.send_message(message.chat.id, invite_msg)
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+    bot.send_message(message.chat.id, invite_msg, reply_markup=keyboard)
     
     save_session(session_id, session)
 
 def process_limit(message, bot, session_manager):
+    # Check if it's a language selection
+    if message.text in ['English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦']:
+        return handle_language_choice(message, bot)
+    
     user_id = message.from_user.id
     try:
         limit = int(message.text)
         if limit <= 0:
             raise ValueError()
     except ValueError:
-        bot.send_message(message.chat.id, get_text('invalid_number', user_id))
+        keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        keyboard.add('/cancel')
+        keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+        bot.send_message(message.chat.id, get_text('invalid_number', user_id), reply_markup=keyboard)
         return bot.register_next_step_handler(message, process_limit, bot, session_manager)
         
     session_id = session_manager.find_active_session(user_id)
@@ -149,9 +177,15 @@ def process_limit(message, bot, session_manager):
         compare_limits(session_id, bot, session_manager)
 
 def handle_stop_confirmation(message, bot, session_manager):
+    # Check if it's a language selection
+    if message.text in ['English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦']:
+        return handle_language_choice(message, bot)
+    
     user_id = message.from_user.id
     if message.text.lower() == 'end':
-        bot.send_message(message.chat.id, get_text('negotiation_ended', user_id))
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+        bot.send_message(message.chat.id, get_text('negotiation_ended', user_id), reply_markup=keyboard)
         session_id = session_manager.find_active_session(user_id)
         if session_id:
             session = session_manager.get_session(session_id)
@@ -159,7 +193,10 @@ def handle_stop_confirmation(message, bot, session_manager):
             bot.send_message(other_id, get_text('other_party_ended', other_id))
             session_manager.end_session(session_id)
     else:
-        bot.send_message(message.chat.id, get_text('enter_new_amount', user_id))
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        keyboard.add('/cancel')
+        keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+        bot.send_message(message.chat.id, get_text('enter_new_amount', user_id), reply_markup=keyboard)
         bot.register_next_step_handler(message, process_limit, bot, session_manager)
 
 def compare_limits(session_id, bot, session_manager):
