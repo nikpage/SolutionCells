@@ -31,6 +31,18 @@ def handle_language_choice(message, bot):
             translated_step,
             reply_markup=types.ReplyKeyboardRemove()
         )
+        # Display role buttons
+        keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        keyboard.row(
+            f"🛒 {get_text('buyer', message.from_user.id)}", 
+            f"💰 {get_text('seller', message.from_user.id)}"
+        )
+        keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+        bot.send_message(
+            message.chat.id,
+            get_text('choose_role', message.from_user.id),
+            reply_markup=keyboard
+        )
     else:
         bot.send_message(message.chat.id, "Please select a language from the keyboard.")
         return language_command(bot, message)
