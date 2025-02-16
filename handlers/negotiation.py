@@ -90,7 +90,7 @@ def handle_role_choice(message, bot, session_manager, message_builder):
     bot.register_next_step_handler(message, process_limit_and_invite, bot, session_manager, message_builder)
 
 def process_limit_and_invite(message, bot, session_manager, message_builder):
-    # Check if it's a language selection
+    # Check if it's a language selection first
     if message.text in ['English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦']:
         return handle_language_choice(message, bot)
     
@@ -107,7 +107,7 @@ def process_limit_and_invite(message, bot, session_manager, message_builder):
         keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
         keyboard.add('/cancel')
         keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
-        bot.send_message(message.chat.id, "Please enter a valid number:", reply_markup=keyboard)
+        bot.send_message(message.chat.id, get_text('enter_new_amount', user_id), reply_markup=keyboard)
         return bot.register_next_step_handler(message, process_limit_and_invite, bot, session_manager, message_builder)
 
     session_id = session_manager.find_active_session(user_id)
@@ -122,11 +122,9 @@ def process_limit_and_invite(message, bot, session_manager, message_builder):
     bot.send_message(message.chat.id, confirmation)
 
     invite_msg = message_builder.build_invitation(session, session.initiator_role)
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
     bot.send_message(message.chat.id, invite_msg, reply_markup=keyboard)
-    
-    save_session(session_id, session)
 
 def process_limit(message, bot, session_manager):
     # Check if it's a language selection
