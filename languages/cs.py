@@ -57,5 +57,6 @@ CZECH = {
 /language - Změnit jazyk
     """,
     'choose_language': "🌐 Vyberte prosím jazyk:",
-    'language_set': "✅ Jazyk nastaven na češtinu"
+    'language_set': "✅ Jazyk nastaven na češtinu",
+    'forward_message': 'Přepošlete tuto zprávu pro pokračování:'
 }
