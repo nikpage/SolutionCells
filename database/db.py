@@ -2,6 +2,9 @@ import sqlite3
 import threading
 from datetime import datetime
 from contextlib import contextmanager
+import logging
+
+logger = logging.getLogger(__name__)
 
 thread_local = threading.local()
 
@@ -48,12 +51,10 @@ def get_db() -> sqlite3.Connection:
         init_db()
     return thread_local.conn
 
-def save_session(session_id: str, sessions: dict, vs code insider vs vs
-                 status: str = 'pending', result: str = None) -> None:
+def save_session(session_id: str, session, status: str = 'pending', result: str = None) -> None:
     """Save a session to the database."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        session = sessions[session_id]
         try:
             cursor.execute('''
                 INSERT OR REPLACE INTO sessions
@@ -62,18 +63,20 @@ def save_session(session_id: str, sessions: dict, vs code insider vs vs
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 session_id,
-                session['initiator_id'],
-                session.get('invited_id'),
-                session['initiator_role'],
-                session.get('initiator_limit'),
-                session.get('invited_limit'),
+                session.initiator_id,
+                session.invited_id,
+                session.initiator_role,
+                session.initiator_limit,
+                session.invited_limit,
                 status,
-                session.get('created_at'),
-                session.get('expires_at')
+                session.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                session.expires_at.strftime('%Y-%m-%d %H:%M:%S')
             ))
             conn.commit()
-        except sqlite3.Error as e:
-            raise Exception(f"Database error while saving session: {e}")
+        except Exception as e:
+            logger.error(f"Error saving session: {e}")
+            conn.rollback()
+            raise
 
 def get_user_language(user_id: int) -> str:
     """Retrieve the user's language preference."""

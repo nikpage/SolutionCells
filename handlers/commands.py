@@ -2,16 +2,17 @@ from datetime import datetime, timedelta
 from telebot import types
 from languages import TRANSLATIONS
 from database import get_user_language
-from utils.money import format_money
 from utils.translations import get_text
 from .negotiation import (
-    handle_user2_session, handle_role_choice,
-    find_active_session, format_expiry_time
+    handle_user2_session,
+    process_limit_and_invite
 )
 from .language import language_command, handle_language_choice
+from session_manager import Session
+import uuid
 
-def start(message, bot, session_manager, message_builder) -> None:
-    """Handle the /start command."""
+def start(message, bot, session_manager, message_builder):
+    """Handle /start command."""
     args = message.text.split()
     if len(args) > 1:
         session_id = args[1]
@@ -20,75 +21,104 @@ def start(message, bot, session_manager, message_builder) -> None:
             handle_user2_session(message, bot, session_id, session_manager)
             return
 
-    # Create role selection keyboard with emojis
+    # Create keyboard with role selection
     keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    user_id = message.from_user.id
-    keyboard.row(
-        f"🛒 {get_text('buyer', user_id)}", 
-        f"💰 {get_text('seller', user_id)}"
-    )
-    keyboard.row('English 🇬🇧', 'Čeština 🇨🇿', 'Українська 🇺🇦')
+    keyboard.row('🛒 Buyer', '💰 Seller')
+    keyboard.row('🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська')
     
-    welcome_msg = message_builder.build_welcome(user_id)
-    
+    # Send welcome message with role selection
     bot.send_message(
         message.chat.id,
-        welcome_msg,
+        get_text('select_role', message.from_user.id),
         reply_markup=keyboard
     )
-    bot.register_next_step_handler(message, handle_role_choice, bot, session_manager, message_builder)
+    
+    # Register next step handler
+    bot.register_next_step_handler(message, handle_role_selection, bot, session_manager, message_builder)
 
-def status_command(message, bot, session_manager) -> None:
+def handle_role_selection(message, bot, session_manager, message_builder):
+    """Handle role selection."""
+    if message.text in ['🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська']:
+        return handle_language_choice(message, bot, session_manager)
+        
+    role = message.text.lower().replace('🛒 ', '').replace('💰 ', '')
+    if role not in ['buyer', 'seller']:
+        keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        keyboard.row('🛒 Buyer', '💰 Seller')
+        keyboard.row('🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська')
+        bot.send_message(
+            message.chat.id,
+            get_text('select_role', message.from_user.id),
+            reply_markup=keyboard
+        )
+        return bot.register_next_step_handler(message, handle_role_selection, bot, session_manager, message_builder)
+
+    # Create new session
+    session_id = str(uuid.uuid4())
+    session = Session(
+        initiator_id=message.from_user.id,
+        initiator_role=role,
+        initiator_limit=None,
+        participant_id=None,
+        participant_limit=None,
+        status='waiting_for_limit'
+    )
+    session_manager.save_session(session_id, session)
+
+    # Ask for amount
+    amount_key = f'enter_amount_{role}'
+    bot.send_message(
+        message.chat.id,
+        get_text(amount_key, message.from_user.id)
+    )
+    
+    # Register next step handler
+    bot.register_next_step_handler(
+        message,
+        process_limit_and_invite,
+        bot,
+        session_manager,
+        message_builder
+    )
+
+def status_command(message, bot, session_manager):
     """Handle the /status command."""
     user_id = message.from_user.id
     session_id = session_manager.find_active_session(user_id)
     
     if not session_id:
-        bot.send_message(message.chat.id, f"📭 {get_text('no_active_session', user_id)}")
-        return
+        keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        keyboard.row('🔄 Start')
+        keyboard.row('🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська')
+        bot.send_message(message.chat.id, get_text('no_active_session', user_id), reply_markup=keyboard)
 
-    session = session_manager.get_session(session_id)
-    if not session:
-        return
-
-    # Create a status message with visual indicators
-    status_msg = "📊 Negotiation Status:\n\n"
-    
-    # Add role indicator
-    role = 'buyer' if ((session.initiator_id == user_id and session.initiator_role == 'buyer') or
-                      (session.invited_id == user_id and session.initiator_role != 'buyer')) else 'seller'
-    role_icon = "🛒" if role == 'buyer' else "💰"
-    status_msg += f"{role_icon} {get_text('your_role', user_id)}: {get_text(role, user_id)}\n\n"
-    
-    # Add amount if set
-    limit = (session.initiator_limit if user_id == session.initiator_id else session.invited_limit)
-    if limit:
-        status_msg += f"💵 {get_text('your_amount', user_id)}: {limit}\n"
-        
-        # Add status indicators
-        if session.status == 'pending':
-            status_msg += f"⏳ {get_text('waiting_for_other', user_id)}\n"
-        elif session.status == 'completed':
-            status_msg += f"✅ {get_text('deal_success', user_id)}\n"
-        elif session.status == 'ended':
-            status_msg += f"🚫 {get_text('negotiation_ended', user_id)}\n"
-        
-        # Add expiry time
-        if session.status not in ['completed', 'ended']:
-            status_msg += f"\n⏰ {get_text('expires_in', user_id)}"
-    else:
-        status_msg += f"❓ {get_text('no_bid', user_id)}"
-
-    bot.send_message(message.chat.id, status_msg)
-
-def cancel_command(message, bot, session_manager) -> None:
+def cancel_command(message, bot, session_manager):
     """Handle the /cancel command."""
-    bot.send_message(message.chat.id, get_text('end_confirm', message.from_user.id))
-    from .negotiation import handle_stop_confirmation  # Import here to avoid circular import
-    bot.register_next_step_handler(message, handle_stop_confirmation, bot, session_manager)
+    user_id = message.from_user.id
+    session_id = session_manager.find_active_session(user_id)
+    
+    if not session_id:
+        keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        keyboard.row('🔄 Start')
+        keyboard.row('🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська')
+        bot.send_message(message.chat.id, get_text('no_active_session', user_id), reply_markup=keyboard)
+
+def stop_command(message, bot, session_manager):
+    """Handle the /stop command."""
+    user_id = message.from_user.id
+    session_id = session_manager.find_active_session(user_id)
+    
+    if not session_id:
+        bot.send_message(message.chat.id, get_text('no_active_session', user_id))
+        return
+        
+    session_manager.delete_session(session_id)
+    bot.send_message(message.chat.id, get_text('negotiation_ended', user_id))
 
 def help_command(message, bot) -> None:
     """Handle the /help command."""
     user_id = message.from_user.id
-    help_text = get_text('help_text', user_id)
-    bot.reply_to(message, help_text)
+    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    keyboard.row('🔄 Start')
+    keyboard.row('🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська')
+    bot.send_message(message.chat.id, get_text('help_text', user_id), reply_markup=keyboard)
