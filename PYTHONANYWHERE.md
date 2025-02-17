@@ -4,17 +4,23 @@
 
 ```
 /home/p23/
-    ├── README.txt
+    ├── CHANGELOG.md
+    ├── PRODUCTION.md
+    ├── PYTHONANYWHERE.md
+    ├── README.md
     ├── SolutionCells/        # Git repository
-    ├── bot_debug.log
+    ├── VERSION
     ├── database/
     ├── flask_app.py
     ├── handlers/
     ├── languages/
+    ├── message_builder.py
     ├── myenv/               # Virtual environment
     ├── mysite/
     ├── negotiations.db
     ├── negotiator.py
+    ├── requirements.txt
+    ├── session_manager.py
     ├── utils/
     └── webhook.log
 ```
@@ -66,7 +72,7 @@
    # In PythonAnywhere Bash console
    cd /home/p23
    ps aux | grep negotiator.py
-   tail -f bot_debug.log
+   tail -f webhook.log
    ```
 
 2. **Test Basic Flow**:
@@ -103,7 +109,6 @@
    ```bash
    # In PythonAnywhere Bash console
    cd /home/p23
-   tail -f bot_debug.log
    tail -f webhook.log
    ```
 
@@ -131,7 +136,7 @@
    ps aux | grep negotiator.py
 
    # Check logs
-   tail -f bot_debug.log
+   tail -f webhook.log
 
    # Restart bot
    kill $(pgrep -f "python3 negotiator.py")
@@ -159,7 +164,10 @@
    cp -r database/ ../
    cp -r utils/ ../
    cp -r languages/ ../
+   cp message_builder.py ../
+   cp session_manager.py ../
    cp negotiator.py ../
+   cp requirements.txt ../
    
    # Restart bot
    cd ..
@@ -178,7 +186,6 @@
    cp negotiations.db "negotiations_$(date +%Y%m%d).db"
    
    # Backup logs
-   cp bot_debug.log "bot_debug_$(date +%Y%m%d).log"
    cp webhook.log "webhook_$(date +%Y%m%d).log"
    ```
 
@@ -212,4 +219,4 @@
    - Git repository in `/home/p23/SolutionCells`
    - Virtual environment in `/home/p23/myenv`
    - Database file: `negotiations.db`
-   - Log files: `bot_debug.log` and `webhook.log`
+   - Log files: `webhook.log`
