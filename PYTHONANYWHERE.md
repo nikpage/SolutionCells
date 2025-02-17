@@ -3,15 +3,20 @@
 ## Directory Structure
 
 ```
-/home/p23/mysite/           # Working & Source directory
-    ├── negotiator.py
-    ├── handlers/
-    ├── utils/
+/home/p23/
+    ├── README.txt
+    ├── SolutionCells/        # Git repository
+    ├── bot_debug.log
     ├── database/
-    ├── bot.log
-    └── users.db
-
-/var/www/p23_pythonanywhere_com_wsgi.py  # WSGI config
+    ├── flask_app.py
+    ├── handlers/
+    ├── languages/
+    ├── myenv/               # Virtual environment
+    ├── mysite/
+    ├── negotiations.db
+    ├── negotiator.py
+    ├── utils/
+    └── webhook.log
 ```
 
 ## Initial Setup
@@ -22,21 +27,23 @@
 
 2. **Setup Project Directory**:
    ```bash
-   cd /home/p23/mysite
-   git clone https://github.com/nikpage/SolutionCells.git .
+   cd /home/p23
+   git clone https://github.com/nikpage/SolutionCells.git SolutionCells
    ```
    Note: The dot (.) at the end clones directly into the current directory
 
 3. **Install Dependencies**:
    ```bash
-   pip3 install --user pyTelegramBotAPI
+   cd /home/p23
+   source myenv/bin/activate
+   pip install pyTelegramBotAPI
    ```
 
 ## Configuration
 
 1. **Set Environment Variables**:
    - Go to "Files" tab
-   - Navigate to `/home/p23/mysite`
+   - Navigate to `/home/p23`
    - Create `.env`:
      ```
      TELEGRAM_BOT_TOKEN=your_bot_token
@@ -47,7 +54,7 @@
    - Add new task
    - Command:
      ```bash
-     cd /home/p23/mysite && python3 negotiator.py
+     cd /home/p23 && source myenv/bin/activate && python3 negotiator.py
      ```
    - Set to run daily
    - Enable "Always-On"
@@ -57,9 +64,9 @@
 1. **Check Bot Status**:
    ```bash
    # In PythonAnywhere Bash console
-   cd /home/p23/mysite
+   cd /home/p23
    ps aux | grep negotiator.py
-   tail -f bot.log
+   tail -f bot_debug.log
    ```
 
 2. **Test Basic Flow**:
@@ -95,15 +102,16 @@
 1. **View Logs**:
    ```bash
    # In PythonAnywhere Bash console
-   cd /home/p23/mysite
-   tail -f bot.log
+   cd /home/p23
+   tail -f bot_debug.log
+   tail -f webhook.log
    ```
 
 2. **Check Database**:
    ```bash
    # In PythonAnywhere Bash console
-   cd /home/p23/mysite
-   sqlite3 users.db "SELECT * FROM user_preferences;"
+   cd /home/p23
+   sqlite3 negotiations.db "SELECT * FROM user_preferences;"
    ```
 
 3. **Monitor Process**:
@@ -116,13 +124,14 @@
 
 1. **Bot Not Responding**:
    ```bash
-   cd /home/p23/mysite
+   cd /home/p23
+   source myenv/bin/activate
    
    # Check if process is running
    ps aux | grep negotiator.py
 
    # Check logs
-   tail -f bot.log
+   tail -f bot_debug.log
 
    # Restart bot
    kill $(pgrep -f "python3 negotiator.py")
@@ -131,22 +140,31 @@
 
 2. **Database Issues**:
    ```bash
-   cd /home/p23/mysite
+   cd /home/p23
    
    # Backup database
-   cp users.db users.db.bak
+   cp negotiations.db negotiations.db.bak
    
    # Check integrity
-   sqlite3 users.db "PRAGMA integrity_check;"
+   sqlite3 negotiations.db "PRAGMA integrity_check;"
    ```
 
 3. **Update Code**:
    ```bash
-   cd /home/p23/mysite
+   cd /home/p23/SolutionCells
    git pull origin main
    
+   # Copy updated files
+   cp -r handlers/ ../
+   cp -r database/ ../
+   cp -r utils/ ../
+   cp -r languages/ ../
+   cp negotiator.py ../
+   
    # Restart bot
+   cd ..
    kill $(pgrep -f "python3 negotiator.py")
+   source myenv/bin/activate
    python3 negotiator.py &
    ```
 
@@ -154,18 +172,19 @@
 
 1. **Manual Backup**:
    ```bash
-   cd /home/p23/mysite
+   cd /home/p23
    
    # Backup database
-   cp users.db "users_$(date +%Y%m%d).db"
+   cp negotiations.db "negotiations_$(date +%Y%m%d).db"
    
    # Backup logs
-   cp bot.log "bot_$(date +%Y%m%d).log"
+   cp bot_debug.log "bot_debug_$(date +%Y%m%d).log"
+   cp webhook.log "webhook_$(date +%Y%m%d).log"
    ```
 
 2. **Download Backups**:
    - Go to "Files" tab
-   - Navigate to `/home/p23/mysite`
+   - Navigate to `/home/p23`
    - Select backup files
    - Click "Download"
 
@@ -189,10 +208,8 @@
    - Monitor for suspicious activity
 
 4. **Directory Access**:
-   - All bot files should be in `/home/p23/mysite`
-   - Logs and database will be created in same directory
-   - Make sure permissions are set correctly:
-     ```bash
-     chmod 755 /home/p23/mysite
-     chmod 644 /home/p23/mysite/.env
-     ```
+   - All bot files should be in `/home/p23`
+   - Git repository in `/home/p23/SolutionCells`
+   - Virtual environment in `/home/p23/myenv`
+   - Database file: `negotiations.db`
+   - Log files: `bot_debug.log` and `webhook.log`
