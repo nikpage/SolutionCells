@@ -1,23 +1,33 @@
 # PythonAnywhere Deployment Guide
 
+## Directory Structure
+
+```
+/home/p23/mysite/           # Working & Source directory
+    ├── negotiator.py
+    ├── handlers/
+    ├── utils/
+    ├── database/
+    ├── bot.log
+    └── users.db
+
+/var/www/p23_pythonanywhere_com_wsgi.py  # WSGI config
+```
+
 ## Initial Setup
 
-1. **Log into PythonAnywhere**:
-   - Go to https://www.pythonanywhere.com
-   - Log into your account
-
-2. **Open Bash Console**:
+1. **Open Bash Console**:
    - Click on `Consoles`
    - Click on `$ Bash`
 
-3. **Clone Repository**:
+2. **Setup Project Directory**:
    ```bash
-   cd
-   git clone https://github.com/nikpage/SolutionCells.git
-   cd SolutionCells
+   cd /home/p23/mysite
+   git clone https://github.com/nikpage/SolutionCells.git .
    ```
+   Note: The dot (.) at the end clones directly into the current directory
 
-4. **Install Dependencies**:
+3. **Install Dependencies**:
    ```bash
    pip3 install --user pyTelegramBotAPI
    ```
@@ -26,19 +36,20 @@
 
 1. **Set Environment Variables**:
    - Go to "Files" tab
-   - Create a new file `.env` in your project directory:
+   - Navigate to `/home/p23/mysite`
+   - Create `.env`:
      ```
      TELEGRAM_BOT_TOKEN=your_bot_token
      ```
 
 2. **Create Always-On Task**:
    - Go to "Tasks" tab
-   - Add a new task
-   - Set the command:
+   - Add new task
+   - Command:
      ```bash
-     cd ~/SolutionCells && python3 negotiator.py
+     cd /home/p23/mysite && python3 negotiator.py
      ```
-   - Set it to run daily
+   - Set to run daily
    - Enable "Always-On"
 
 ## Verification Steps
@@ -46,8 +57,9 @@
 1. **Check Bot Status**:
    ```bash
    # In PythonAnywhere Bash console
+   cd /home/p23/mysite
    ps aux | grep negotiator.py
-   tail -f ~/SolutionCells/bot.log
+   tail -f bot.log
    ```
 
 2. **Test Basic Flow**:
@@ -83,14 +95,14 @@
 1. **View Logs**:
    ```bash
    # In PythonAnywhere Bash console
-   cd ~/SolutionCells
+   cd /home/p23/mysite
    tail -f bot.log
    ```
 
 2. **Check Database**:
    ```bash
    # In PythonAnywhere Bash console
-   cd ~/SolutionCells
+   cd /home/p23/mysite
    sqlite3 users.db "SELECT * FROM user_preferences;"
    ```
 
@@ -104,20 +116,22 @@
 
 1. **Bot Not Responding**:
    ```bash
+   cd /home/p23/mysite
+   
    # Check if process is running
    ps aux | grep negotiator.py
 
    # Check logs
-   tail -f ~/SolutionCells/bot.log
+   tail -f bot.log
 
    # Restart bot
    kill $(pgrep -f "python3 negotiator.py")
-   cd ~/SolutionCells && python3 negotiator.py &
+   python3 negotiator.py &
    ```
 
 2. **Database Issues**:
    ```bash
-   cd ~/SolutionCells
+   cd /home/p23/mysite
    
    # Backup database
    cp users.db users.db.bak
@@ -128,7 +142,7 @@
 
 3. **Update Code**:
    ```bash
-   cd ~/SolutionCells
+   cd /home/p23/mysite
    git pull origin main
    
    # Restart bot
@@ -140,7 +154,7 @@
 
 1. **Manual Backup**:
    ```bash
-   cd ~/SolutionCells
+   cd /home/p23/mysite
    
    # Backup database
    cp users.db "users_$(date +%Y%m%d).db"
@@ -151,6 +165,7 @@
 
 2. **Download Backups**:
    - Go to "Files" tab
+   - Navigate to `/home/p23/mysite`
    - Select backup files
    - Click "Download"
 
@@ -172,3 +187,12 @@
    - Don't expose database file
    - Use HTTPS for API calls
    - Monitor for suspicious activity
+
+4. **Directory Access**:
+   - All bot files should be in `/home/p23/mysite`
+   - Logs and database will be created in same directory
+   - Make sure permissions are set correctly:
+     ```bash
+     chmod 755 /home/p23/mysite
+     chmod 644 /home/p23/mysite/.env
+     ```
