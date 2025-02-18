@@ -1,9 +1,11 @@
 # 1
 import os
 import logging
+import sys
 from datetime import datetime
 from telebot import TeleBot
-from utils.message_builder import MessageBuilder
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from message_builder import MessageBuilder
 from session_manager import SessionManager
 from handlers import (
     language_command,
