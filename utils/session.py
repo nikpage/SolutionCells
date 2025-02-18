@@ -45,10 +45,23 @@ class SessionManager:
             for key, value in updates.items():
                 setattr(session, key, value)
 
+    def delete_session(self, session_id: str) -> None:
+        if session_id in self.sessions:
+            session = self.sessions[session_id]
+            # Remove session from both users' active sessions
+            if session.initiator_id in self.user_sessions:
+                if session_id in self.user_sessions[session.initiator_id]:
+                    self.user_sessions[session.initiator_id].remove(session_id)
+            if session.invited_id in self.user_sessions:
+                if session_id in self.user_sessions[session.invited_id]:
+                    self.user_sessions[session.invited_id].remove(session_id)
+            # Delete the session
+            del self.sessions[session_id]
+
     def end_session(self, session_id: str) -> None:
         if session_id in self.sessions:
             self.sessions[session_id].status = 'ended'
-            del self.sessions[session_id]
+            self.delete_session(session_id)
 
     def find_active_session(self, user_id: int) -> Optional[str]:
         for session_id, session in self.sessions.items():

@@ -43,6 +43,11 @@ def handle_user2_session(message, bot, session_id, session_manager):
     # Set participant ID and role (opposite of initiator)
     session.invited_id = message.from_user.id
     session_manager.update_session(session_id, invited_id=message.from_user.id)
+    
+    # Add session to second user's active sessions
+    if message.from_user.id not in session_manager.user_sessions:
+        session_manager.user_sessions[message.from_user.id] = []
+    session_manager.user_sessions[message.from_user.id].append(session_id)
 
     # Ask for amount based on predetermined role
     participant_role = 'buyer' if session.initiator_role == 'seller' else 'seller'
