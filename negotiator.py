@@ -2,7 +2,7 @@
 import os
 import logging
 from datetime import datetime
-from telebot import TeleBot
+import telebot
 from message_builder import MessageBuilder
 from session_manager import SessionManager
 from handlers import (
@@ -32,7 +32,7 @@ logger.info("Starting bot...")
 
 def main():
     # Initialize bot and message builder
-    bot = TeleBot(BOT_TOKEN)
+    bot = telebot.TeleBot(BOT_TOKEN)
     message_builder = MessageBuilder()
     session_manager = SessionManager()
 
