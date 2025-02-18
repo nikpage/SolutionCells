@@ -151,19 +151,27 @@ def process_limit(message, bot, session_manager):
     # Find session where user is participant or initiator
     session_id = None
     for sid, session in session_manager._sessions.items():
-        if ((session.get('initiator_id') == user_id or session.get('invited_id') == user_id) and
-            session.get('status') in ['pending', 'awaiting_updates']):
-            if session['expires_at'] > datetime.now():
+        if ((session.initiator_id == user_id or session.participant_id == user_id) and
+            session.status in ['pending', 'awaiting_updates']):
+            if session.expires_at > datetime.now():
                 session_id = sid
                 break
 
     if not session_id:
-        bot.send_message(message.chat.id, get_text('no_active_session', user_id))
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.add(types.KeyboardButton('🇬🇧 English'))
+        markup.add(types.KeyboardButton('🇨🇿 Čeština'))
+        markup.add(types.KeyboardButton('🇺🇦 Українська'))
+        bot.send_message(message.chat.id, get_text('no_active_session', user_id), reply_markup=markup)
         return
 
     session = session_manager.get_session(session_id)
     if not session:
-        bot.send_message(message.chat.id, get_text('no_active_session', user_id))
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.add(types.KeyboardButton('🇬🇧 English'))
+        markup.add(types.KeyboardButton('🇨🇿 Čeština'))
+        markup.add(types.KeyboardButton('🇺🇦 Українська'))
+        bot.send_message(message.chat.id, get_text('no_active_session', user_id), reply_markup=markup)
         return
 
     # Update the limit for the appropriate user
@@ -236,11 +244,11 @@ def register_forward_handler(bot):
 
 def find_active_session(user_id, sessions):
     for session_id, session in sessions.items():
-        if ((session.get('initiator_id') == user_id or session.get('invited_id') == user_id) and
-            session.get('status') in ['pending', 'awaiting_updates']):
-            if session['expires_at'] > datetime.now():
+        if ((session.initiator_id == user_id or session.participant_id == user_id) and
+            session.status in ['pending', 'awaiting_updates']):
+            if session.expires_at > datetime.now():
                 return session_id
             else:
-                session['status'] = 'expired'
+                session.status = 'expired'
                 save_session(session_id, sessions, 'expired')
     return None

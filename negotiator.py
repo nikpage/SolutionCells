@@ -1,17 +1,13 @@
 # 1
 import os
 import logging
-import sys
 from datetime import datetime
 from telebot import TeleBot
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from message_builder import MessageBuilder
 from session_manager import SessionManager
 from handlers import (
     language_command,
     start,
-    status_command,
-    cancel_command,
     help_command,
     stop_command
 )
@@ -52,7 +48,7 @@ def main():
         logger.info(f"Start command from user {message.from_user.id}")
         start(message, bot, session_manager, message_builder)
 
-    @bot.message_handler(func=lambda message: message.text == '🔄 Start')
+    @bot.message_handler(func=lambda message: message.text == ' Start')
     def handle_start_button(message):
         start(message, bot, session_manager, message_builder)
 
