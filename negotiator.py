@@ -12,7 +12,7 @@ from handlers import (
     stop_command
 )
 
-BOT_TOKEN = os.getenv('BOT_TOKEN', "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk")
+TOKEN = os.getenv('BOT_TOKEN', "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk")
 
 # Ensure logs directory exists
 log_dir = os.path.expanduser('~/logs')
@@ -32,7 +32,7 @@ logger.info("Starting bot...")
 
 def main():
     # Initialize bot and message builder
-    bot = TeleBot(BOT_TOKEN)
+    bot = TeleBot(TOKEN)
     message_builder = MessageBuilder()
     session_manager = SessionManager()
 
