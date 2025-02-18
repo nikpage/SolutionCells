@@ -36,16 +36,16 @@ def handle_user2_session(message, bot, session_id, session_manager):
         return
 
     # Check if user is trying to join their own session
-    if message.from_user.id == session.session['initiator_id']:
+    if message.from_user.id == session.initiator_id:
         bot.send_message(message.chat.id, get_text('cant_join_own', message.from_user.id))
         return
 
     # Set participant ID and role (opposite of initiator)
-    session.session['participant_id'] = message.from_user.id
-    session_manager.save_session(session_id, session)
+    session.invited_id = message.from_user.id
+    session_manager.update_session(session_id, invited_id=message.from_user.id)
 
     # Ask for amount based on predetermined role
-    participant_role = 'buyer' if session.session['initiator_role'] == 'seller' else 'seller'
+    participant_role = 'buyer' if session.initiator_role == 'seller' else 'seller'
     bot.send_message(
         message.chat.id,
         get_text(f'enter_amount_{participant_role}', message.from_user.id)
@@ -151,9 +151,9 @@ def process_limit(message, bot, session_manager):
     # Find session where user is participant or initiator
     session_id = None
     for sid, session in session_manager._sessions.items():
-        if ((session.session['initiator_id'] == user_id or session.session['invited_id'] == user_id) and
-            session.session['status'] in ['pending', 'awaiting_updates']):
-            if session.session['expires_at'] > datetime.now():
+        if ((session.initiator_id == user_id or session.invited_id == user_id) and
+            session.status in ['pending', 'awaiting_updates']):
+            if session.expires_at > datetime.now():
                 session_id = sid
                 break
 
@@ -175,36 +175,45 @@ def process_limit(message, bot, session_manager):
         return
 
     # Update the limit for the appropriate user
-    if user_id == session.session['initiator_id']:
-        session.session['initiator_limit'] = limit
+    if user_id == session.initiator_id:
+        session.initiator_limit = limit
+        session_manager.update_session(session_id, initiator_limit=limit)
     else:
-        session.session['invited_limit'] = limit
+        session.invited_limit = limit
+        session_manager.update_session(session_id, invited_limit=limit)
 
-    # Calculate if there's a deal
-    session.calculate_limits()
-    agreed_price = session.compare_limits()
+    # Check if both limits are set
+    if session.initiator_limit is not None and session.invited_limit is not None:
+        # Determine if there's a deal based on buyer/seller roles
+        if session.initiator_role == 'buyer':
+            buyer_limit = session.initiator_limit
+            seller_limit = session.invited_limit
+        else:
+            buyer_limit = session.invited_limit
+            seller_limit = session.initiator_limit
 
-    if agreed_price:
-        # Deal successful
-        bot.send_message(
-            message.chat.id,
-            get_text('deal_success', user_id).format(price=agreed_price)
-        )
-        if session.session['initiator_id'] != user_id:
+        if buyer_limit >= seller_limit:
+            # Deal successful at seller's price
+            agreed_price = seller_limit
             bot.send_message(
-                session.session['initiator_id'],
-                get_text('deal_success', session.session['initiator_id']).format(price=agreed_price)
+                message.chat.id,
+                get_text('deal_success', user_id).format(price=agreed_price)
             )
-        # Clean up the session
-        session_manager.delete_session(session_id)
-    else:
-        # No deal possible, but allow new bids
-        bot.send_message(message.chat.id, get_text('deal_failed', user_id))
-        if session.session['initiator_id'] != user_id:
-            bot.send_message(
-                session.session['initiator_id'],
-                get_text('deal_failed', session.session['initiator_id'])
-            )
+            if session.initiator_id != user_id:
+                bot.send_message(
+                    session.initiator_id,
+                    get_text('deal_success', session.initiator_id).format(price=agreed_price)
+                )
+            # Clean up the session
+            session_manager.delete_session(session_id)
+        else:
+            # No deal possible, but allow new bids
+            bot.send_message(message.chat.id, get_text('deal_failed', user_id))
+            if session.initiator_id != user_id:
+                bot.send_message(
+                    session.initiator_id,
+                    get_text('deal_failed', session.initiator_id)
+                )
 
 def handle_stop_confirmation(message, bot, session_manager):
     # Check if it's a language selection
@@ -247,11 +256,11 @@ def register_forward_handler(bot):
 
 def find_active_session(user_id, sessions):
     for session_id, session in sessions.items():
-        if ((session.session['initiator_id'] == user_id or session.session['invited_id'] == user_id) and
-            session.session['status'] in ['pending', 'awaiting_updates']):
-            if session.session['expires_at'] > datetime.now():
+        if ((session.initiator_id == user_id or session.invited_id == user_id) and
+            session.status in ['pending', 'awaiting_updates']):
+            if session.expires_at > datetime.now():
                 return session_id
             else:
-                session.session['status'] = 'expired'
+                session.status = 'expired'
                 session_manager.save_session(session_id, session)
     return None
