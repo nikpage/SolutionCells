@@ -40,16 +40,15 @@ def handle_user2_session(message, bot, session_id, session_manager):
         bot.send_message(message.chat.id, get_text('cant_join_own', message.from_user.id))
         return
 
-    # Set participant ID
+    # Set participant ID and role (opposite of initiator)
     session.participant_id = message.from_user.id
     session_manager.save_session(session_id, session)
 
-    # Ask for amount
-    other_role = 'seller' if session.initiator_role == 'buyer' else 'buyer'
-    amount_key = f'enter_amount_{other_role}'
+    # Ask for amount based on predetermined role
+    participant_role = 'buyer' if session.initiator_role == 'seller' else 'seller'
     bot.send_message(
         message.chat.id,
-        get_text(amount_key, message.from_user.id)
+        get_text(f'enter_amount_{participant_role}', message.from_user.id)
     )
     bot.register_next_step_handler(message, process_limit, bot, session_manager)
 
@@ -152,9 +151,11 @@ def process_limit(message, bot, session_manager):
     # Find session where user is participant or initiator
     session_id = None
     for sid, session in session_manager._sessions.items():
-        if session.initiator_id == user_id or session.participant_id == user_id:
-            session_id = sid
-            break
+        if ((session.get('initiator_id') == user_id or session.get('invited_id') == user_id) and
+            session.get('status') in ['pending', 'awaiting_updates']):
+            if session['expires_at'] > datetime.now():
+                session_id = sid
+                break
 
     if not session_id:
         bot.send_message(message.chat.id, get_text('no_active_session', user_id))
