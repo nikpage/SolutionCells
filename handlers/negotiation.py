@@ -152,11 +152,9 @@ def process_limit(message, bot, session_manager):
     # Find session where user is participant or initiator
     session_id = None
     for sid, session in session_manager._sessions.items():
-        if ((session.get('initiator_id') == user_id or session.get('participant_id') == user_id) and
-            session.get('status') in ['pending', 'awaiting_updates']):
-            if session['expires_at'] > datetime.now():
-                session_id = sid
-                break
+        if session.initiator_id == user_id or session.participant_id == user_id:
+            session_id = sid
+            break
 
     if not session_id:
         bot.send_message(message.chat.id, get_text('no_active_session', user_id))
