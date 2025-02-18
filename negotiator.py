@@ -12,7 +12,7 @@ from handlers import (
     stop_command
 )
 
-BOT_TOKEN = "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk"
+BOT_TOKEN = os.getenv('BOT_TOKEN', "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk")
 
 # Configure logging
 logging.basicConfig(
