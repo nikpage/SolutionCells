@@ -20,7 +20,10 @@ class NegotiationSession:
 
     def compare_limits(self):
         buyer_limit, seller_limit = self.calculate_limits()
-        return buyer_limit >= seller_limit
+        if buyer_limit >= seller_limit:
+            return (buyer_limit + seller_limit) // 2
+        else:
+            return None
 
 def handle_user2_session(message, bot, session_id, session_manager):
     # Check if it's a language selection first
@@ -146,12 +149,14 @@ def process_limit(message, bot, session_manager):
         bot.send_message(message.chat.id, get_text('invalid_amount', user_id))
         return bot.register_next_step_handler(message, process_limit, bot, session_manager)
 
-    # Find session where user is participant
+    # Find session where user is participant or initiator
     session_id = None
     for sid, session in session_manager._sessions.items():
-        if session.participant_id == user_id:
-            session_id = sid
-            break
+        if ((session.get('initiator_id') == user_id or session.get('participant_id') == user_id) and
+            session.get('status') in ['pending', 'awaiting_updates']):
+            if session['expires_at'] > datetime.now():
+                session_id = sid
+                break
 
     if not session_id:
         bot.send_message(message.chat.id, get_text('no_active_session', user_id))
@@ -162,37 +167,34 @@ def process_limit(message, bot, session_manager):
         bot.send_message(message.chat.id, get_text('no_active_session', user_id))
         return
 
-    # Set participant limit
-    session.participant_limit = limit
-    session_manager.save_session(session_id, session)
+    # Update the limit for the appropriate user
+    if user_id == session.initiator_id:
+        session.initiator_limit = limit
+    else:
+        session.participant_limit = limit
 
-    # Compare limits and determine if there's a deal
-    buyer_limit = session.initiator_limit if session.initiator_role == 'buyer' else session.participant_limit
-    seller_limit = session.initiator_limit if session.initiator_role == 'seller' else session.participant_limit
+    # Calculate if there's a deal
+    session.calculate_limits()
+    agreed_price = session.compare_limits()
 
-    if buyer_limit >= seller_limit:
+    if agreed_price:
         # Deal successful
-        agreed_price = (buyer_limit + seller_limit) // 2
         bot.send_message(
             message.chat.id,
             get_text('deal_success', user_id).format(price=agreed_price)
         )
-        if session.initiator_id:
+        if session.initiator_id != user_id:
             bot.send_message(
                 session.initiator_id,
                 get_text('deal_success', session.initiator_id).format(price=agreed_price)
             )
+        # Clean up the session
+        session_manager.delete_session(session_id)
     else:
         # No deal possible, but allow new bids
         bot.send_message(message.chat.id, get_text('deal_failed', user_id))
-        if session.initiator_id:
+        if session.initiator_id != user_id:
             bot.send_message(session.initiator_id, get_text('deal_failed', session.initiator_id))
-        
-        # Don't clean up session yet - wait for new bid or 'end'
-        return
-
-    # Clean up session only on successful deal
-    session_manager.delete_session(session_id)
 
 def handle_stop_confirmation(message, bot, session_manager):
     # Check if it's a language selection

@@ -13,7 +13,7 @@ TRANSLATIONS = {
         'enter_amount_seller': 'Enter your minimum price:',
         'invalid_amount': 'Please enter a valid number.',
         'deal_success': 'Deal successful! The agreed price is {price}',
-        'deal_failed': 'Your offers are not within range.\n* If you want to change your bid enter the number now.\n* If you want to end the negotiation type end.',
+        'deal_failed': 'Your offers are not within range.\n💰 If you want to change your bid enter the number now.\n🚫 If you want to end the negotiation type end.',
         'welcome': 'Welcome to the negotiation bot! Please select your role.',
         'negotiation_cancelled': 'Negotiation cancelled.',
         'no_active_session': 'No active negotiation session.',
