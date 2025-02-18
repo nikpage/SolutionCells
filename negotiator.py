@@ -5,12 +5,10 @@ from datetime import datetime
 from telebot import TeleBot
 from message_builder import MessageBuilder
 from session_manager import SessionManager
-from handlers import (
-    language_command,
-    start,
-    help_command,
-    stop_command
-)
+from handlers.language import language_command, handle_language_choice
+from handlers.negotiation import process_limit, process_limit_and_invite, handle_stop_confirmation, handle_role_choice
+from handlers.commands import start, status_command, cancel_command, help_command, stop_command
+from utils.translations import get_text
 
 BOT_TOKEN = os.getenv('BOT_TOKEN', "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk")
 
@@ -39,78 +37,60 @@ def main():
         logger.info(f"Successfully connected to bot {BOT_NAME}")
     except Exception as e:
         logger.error(f"Failed to initialize bot: {str(e)}")
-        raise e
+        raise
 
-    # Register command handlers
+    # Register message handlers
     @bot.message_handler(commands=['start'])
     def handle_start(message):
-        """Handle /start command."""
-        logger.info(f"Start command from user {message.from_user.id}")
-        start(message, bot, session_manager, message_builder)
-
-    @bot.message_handler(func=lambda message: message.text == ' Start')
-    def handle_start_button(message):
-        start(message, bot, session_manager, message_builder)
-
-    @bot.message_handler(func=lambda message: message.text == 'Start')
-    def handle_start_text(message):
         start(message, bot, session_manager, message_builder)
 
     @bot.message_handler(commands=['language'])
     def handle_language(message):
-        """Handle /language command."""
-        logger.info(f"Language command from user {message.from_user.id}")
         language_command(bot, message)
 
     @bot.message_handler(commands=['status'])
     def handle_status(message):
-        """Handle /status command."""
-        logger.info(f"Status command from user {message.from_user.id}")
         status_command(message, bot, session_manager)
 
     @bot.message_handler(commands=['cancel'])
     def handle_cancel(message):
-        """Handle /cancel command."""
-        logger.info(f"Cancel command from user {message.from_user.id}")
         cancel_command(message, bot, session_manager)
 
     @bot.message_handler(commands=['help'])
     def handle_help(message):
-        """Handle /help command."""
-        logger.info(f"Help command from user {message.from_user.id}")
         help_command(message, bot)
 
     @bot.message_handler(commands=['stop'])
     def handle_stop(message):
-        """Handle /stop command."""
-        logger.info(f"Stop command from user {message.from_user.id}")
         stop_command(message, bot, session_manager)
 
     @bot.message_handler(func=lambda message: message.text and message.text.lower() == 'end')
     def handle_end(message):
-        """Handle end command to stop negotiation"""
-        session = find_active_session(message.from_user.id, session_manager.get_all_sessions())
-        if session:
-            session_manager.delete_session(session.session['session_id'])
-            bot.send_message(message.chat.id, get_text('negotiation_ended', message.from_user.id))
-            if session.session['initiator_id'] != message.from_user.id:
-                bot.send_message(session.session['initiator_id'], get_text('negotiation_ended', session.session['initiator_id']))
+        user_sessions = session_manager.get_user_sessions(message.from_user.id)
+        if user_sessions:
+            session_id = user_sessions[0]  # Get first active session
+            session = session_manager.get_session(session_id)
+            if session:
+                session_manager.delete_session(session_id)
+                bot.send_message(message.chat.id, get_text('negotiation_ended', message.from_user.id))
+                if session.initiator_id != message.from_user.id:
+                    bot.send_message(session.initiator_id, get_text('negotiation_ended', session.initiator_id))
         else:
             bot.send_message(message.chat.id, get_text('no_active_session', message.from_user.id))
 
-    @bot.message_handler(func=lambda message: message.text and message.text.replace('.', '', 1).isdigit())
-    def handle_number(message):
-        """Handle numeric input as potential bid"""
-        process_limit(message, bot, session_manager)
+    # Handle language choice responses
+    @bot.message_handler(func=lambda message: message.text in ['🇨🇿 Čeština', '🇬🇧 English', '🇺🇦 Українська'])
+    def handle_lang_choice(message):
+        handle_language_choice(message, bot)
 
-    # Start bot
+    logger.info("Starting infinity polling...")
     try:
-        logger.info("Starting infinity polling...")
         bot.infinity_polling(timeout=10, long_polling_timeout=5)
-    except Exception as e:
-        logger.error(f"Bot stopped due to error: {e}")
-    finally:
+    except KeyboardInterrupt:
         logger.info("Bot stopped")
+    except Exception as e:
+        logger.error(f"Bot crashed: {str(e)}")
+        raise
 
 if __name__ == '__main__':
     main()

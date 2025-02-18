@@ -38,9 +38,6 @@ def start(message, bot, session_manager, message_builder):
 
 def handle_role_selection(message, bot, session_manager, message_builder):
     """Handle role selection."""
-    if message.text in ['🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська']:
-        return handle_language_choice(message, bot, session_manager)
-        
     role = message.text.lower().replace('🛒 ', '').replace('💰 ', '')
     if role not in ['buyer', 'seller']:
         keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
@@ -58,10 +55,9 @@ def handle_role_selection(message, bot, session_manager, message_builder):
     session = Session(
         initiator_id=message.from_user.id,
         initiator_role=role,
-        initiator_limit=None,
-        participant_id=None,
-        participant_limit=None,
-        status='waiting_for_limit'
+        status='waiting_for_limit',
+        created_at=datetime.now(),
+        expires_at=datetime.now() + timedelta(hours=24)
     )
     session_manager.save_session(session_id, session)
 
@@ -72,7 +68,7 @@ def handle_role_selection(message, bot, session_manager, message_builder):
         get_text(amount_key, message.from_user.id)
     )
     
-    # Register next step handler
+    # Register next step handler for amount
     bot.register_next_step_handler(
         message,
         process_limit_and_invite,
