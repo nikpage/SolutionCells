@@ -23,26 +23,32 @@ def init_db():
     """Initialize the database schema."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS sessions (
-                session_id TEXT PRIMARY KEY,
-                initiator_id INTEGER,
-                invited_id INTEGER,
-                initiator_role TEXT,
-                initiator_limit INTEGER,
-                invited_limit INTEGER,
-                status TEXT,
-                created_at DATETIME,
-                expires_at DATETIME
-            )
-        ''')
+        
+        # Create user preferences table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_preferences (
                 user_id INTEGER PRIMARY KEY,
                 language TEXT DEFAULT 'en'
             )
         ''')
+        
+        # Create sessions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id TEXT PRIMARY KEY,
+                initiator_id INTEGER,
+                participant_id INTEGER,
+                initiator_role TEXT,
+                initiator_limit INTEGER,
+                participant_limit INTEGER,
+                status TEXT,
+                created_at DATETIME,
+                expires_at DATETIME
+            )
+        ''')
+        
         conn.commit()
+        print("Database tables created successfully")
 
 def get_db() -> sqlite3.Connection:
     """Initialize and return the database connection."""
@@ -58,8 +64,8 @@ def save_session(session_id: str, session, status: str = 'pending', result: str 
         try:
             cursor.execute('''
                 INSERT OR REPLACE INTO sessions
-                (session_id, initiator_id, invited_id, initiator_role,
-                 initiator_limit, invited_limit, status, created_at, expires_at)
+                (session_id, initiator_id, participant_id, initiator_role,
+                 initiator_limit, participant_limit, status, created_at, expires_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 session_id,
