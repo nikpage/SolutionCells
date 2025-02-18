@@ -30,7 +30,6 @@ def handle_language_choice(message, bot):
     # Show role selection after language is set
     keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     keyboard.row('🛒 Buyer', '💰 Seller')
-    keyboard.row('🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська')
     bot.send_message(
         message.chat.id,
         get_text('select_role', message.from_user.id),

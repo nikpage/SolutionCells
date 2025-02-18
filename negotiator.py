@@ -6,7 +6,7 @@ from telebot import TeleBot
 from message_builder import MessageBuilder
 from session_manager import SessionManager
 from handlers.language import language_command, handle_language_choice
-from handlers.negotiation import process_limit, process_limit_and_invite, handle_stop_confirmation, handle_role_choice
+from handlers.negotiation import process_limit_and_invite, handle_stop_confirmation
 from handlers.commands import start, status_command, cancel_command, help_command, stop_command
 from utils.translations import get_text
 
