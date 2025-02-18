@@ -3,7 +3,7 @@ import os
 import logging
 from datetime import datetime
 from telebot import TeleBot
-from message_builder import MessageBuilder
+from utils.message_builder import MessageBuilder
 from session_manager import SessionManager
 from handlers import (
     language_command,
