@@ -2,7 +2,7 @@
 import os
 import logging
 from datetime import datetime
-import telebot
+from telebot import TeleBot
 from message_builder import MessageBuilder
 from session_manager import SessionManager
 from handlers import (
@@ -14,16 +14,12 @@ from handlers import (
 
 BOT_TOKEN = os.getenv('BOT_TOKEN', "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk")
 
-# Ensure logs directory exists
-log_dir = os.path.expanduser('~/logs')
-os.makedirs(log_dir, exist_ok=True)
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'bot.log')),
+        logging.FileHandler('bot.log'),
         logging.StreamHandler()
     ]
 )
@@ -32,7 +28,7 @@ logger.info("Starting bot...")
 
 def main():
     # Initialize bot and message builder
-    bot = telebot.TeleBot(BOT_TOKEN)
+    bot = TeleBot(BOT_TOKEN)
     message_builder = MessageBuilder()
     session_manager = SessionManager()
 
