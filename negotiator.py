@@ -88,6 +88,23 @@ def main():
         logger.info(f"Stop command from user {message.from_user.id}")
         stop_command(message, bot, session_manager)
 
+    @bot.message_handler(func=lambda message: message.text and message.text.lower() == 'end')
+    def handle_end(message):
+        """Handle end command to stop negotiation"""
+        session = find_active_session(message.from_user.id, session_manager.get_all_sessions())
+        if session:
+            session_manager.delete_session(session.session['session_id'])
+            bot.send_message(message.chat.id, get_text('negotiation_ended', message.from_user.id))
+            if session.session['initiator_id'] != message.from_user.id:
+                bot.send_message(session.session['initiator_id'], get_text('negotiation_ended', session.session['initiator_id']))
+        else:
+            bot.send_message(message.chat.id, get_text('no_active_session', message.from_user.id))
+
+    @bot.message_handler(func=lambda message: message.text and message.text.replace('.', '', 1).isdigit())
+    def handle_number(message):
+        """Handle numeric input as potential bid"""
+        process_limit(message, bot, session_manager)
+
     # Start bot
     try:
         logger.info("Starting infinity polling...")

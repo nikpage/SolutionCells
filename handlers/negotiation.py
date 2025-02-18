@@ -183,12 +183,15 @@ def process_limit(message, bot, session_manager):
                 get_text('deal_success', session.initiator_id).format(price=agreed_price)
             )
     else:
-        # No deal possible
+        # No deal possible, but allow new bids
         bot.send_message(message.chat.id, get_text('deal_failed', user_id))
         if session.initiator_id:
             bot.send_message(session.initiator_id, get_text('deal_failed', session.initiator_id))
+        
+        # Don't clean up session yet - wait for new bid or 'end'
+        return
 
-    # Clean up the session
+    # Clean up session only on successful deal
     session_manager.delete_session(session_id)
 
 def handle_stop_confirmation(message, bot, session_manager):
