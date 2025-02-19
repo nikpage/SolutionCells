@@ -77,7 +77,7 @@ def main():
         else:
             bot.send_message(message.chat.id, get_text('no_active_session', message.from_user.id))
 
-    @bot.message_handler(func=lambda message: message.text and message.text == " Start New Negotiation")
+    @bot.message_handler(func=lambda message: message.text and message.text == "🔄 Start New Negotiation")
     def handle_start_button(message):
         start(message, bot, session_manager, message_builder)
 
