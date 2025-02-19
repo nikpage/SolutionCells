@@ -7,8 +7,13 @@ from session_manager import SessionManager
 from handlers.negotiation import process_limit_and_invite, handle_stop_confirmation
 from handlers.commands import start, status_command, cancel_command, help_command, stop_command
 from utils.translations import get_text
+from dotenv import load_dotenv
 
-BOT_TOKEN = "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk"
+# Load environment variables
+load_dotenv()
+
+# Get bot token from environment
+BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk")
 
 # Configure logging
 logging.basicConfig(
@@ -72,7 +77,7 @@ def main():
         else:
             bot.send_message(message.chat.id, get_text('no_active_session', message.from_user.id))
 
-    @bot.message_handler(func=lambda message: message.text and message.text == "🔄 Start New Negotiation")
+    @bot.message_handler(func=lambda message: message.text and message.text == " Start New Negotiation")
     def handle_start_button(message):
         start(message, bot, session_manager, message_builder)
 
