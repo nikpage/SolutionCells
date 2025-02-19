@@ -1,119 +1,112 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from telebot import types
-from languages import TRANSLATIONS
-from database import get_user_language, set_user_language
+from database import get_user_language
 from utils.translations import get_text
-from .language import handle_language_choice
-
-class NegotiationSession:
-    def __init__(self, session_data: dict):
-        self.session = session_data
-
-    def calculate_limits(self):
-        if self.session['initiator_role'] == 'buyer':
-            buyer_limit = self.session['initiator_limit']
-            seller_limit = self.session['invited_limit']
-        else:  # initiator is seller
-            buyer_limit = self.session['invited_limit']
-            seller_limit = self.session['initiator_limit']
-        return buyer_limit, seller_limit
-
-    def compare_limits(self):
-        buyer_limit, seller_limit = self.calculate_limits()
-        if buyer_limit >= seller_limit:
-            return (buyer_limit + seller_limit) // 2
-        else:
-            return None
+from session_manager import Session
+import uuid
 
 def handle_user2_session(message, bot, session_id, session_manager):
+    """Handle user2 joining a session."""
+    # Get the session
     session = session_manager.get_session(session_id)
     if not session:
-        bot.send_message(message.chat.id, get_text('no_active_session', message.from_user.id))
+        bot.send_message(
+            message.chat.id,
+            get_text("session_not_found", message.from_user.id)
+        )
         return
 
-    # Check if user is trying to join their own session
-    if message.from_user.id == session.initiator_id:
-        bot.send_message(message.chat.id, get_text('cant_join_own', message.from_user.id))
+    # Check if this user is already in another session
+    user_sessions = session_manager.get_user_sessions(message.from_user.id)
+    if user_sessions:
+        bot.send_message(
+            message.chat.id,
+            get_text("already_in_session", message.from_user.id)
+        )
         return
 
-    # Set participant ID and role (opposite of initiator)
-    session.invited_id = message.from_user.id
-    session_manager.update_session(session_id, invited_id=message.from_user.id)
-    
-    # Add session to second user's active sessions
-    if message.from_user.id not in session_manager.user_sessions:
-        session_manager.user_sessions[message.from_user.id] = []
-    session_manager.user_sessions[message.from_user.id].append(session_id)
+    # Update session with user2
+    session.participant_id = message.from_user.id
+    session.status = "waiting_for_participant_limit"
+    session_manager.save_session(session_id, session)
 
-    # Ask for amount based on predetermined role
-    participant_role = 'buyer' if session.initiator_role == 'seller' else 'seller'
+    # Ask user2 for their limit
+    role = "buyer" if session.initiator_role == "seller" else "seller"
+    amount_key = f"enter_amount_{role}"
+    force_reply = types.ForceReply(selective=True)
     bot.send_message(
         message.chat.id,
-        get_text(f'enter_amount_{participant_role}', message.from_user.id)
+        get_text(amount_key, message.from_user.id),
+        reply_markup=force_reply
     )
-    bot.register_next_step_handler(message, process_limit, bot, session_manager)
-
-def handle_role_choice(message, bot, session_manager, message_builder):
-    user_id = message.from_user.id
     
-    role = message.text.lower().replace('🛒 ', '').replace('💰 ', '')
-
-    if role not in [get_text('buyer', user_id).lower(), get_text('seller', user_id).lower()]:
-        from .commands import start
-        return start(message, bot, session_manager, message_builder)
-
-    role = 'buyer' if role == get_text('buyer', user_id).lower() else 'seller'
-    
-    session_id = session_manager.create_session(user_id, role)
-    session = session_manager.get_session(session_id)
-    
-    question = message_builder.build_amount_prompt(user_id, role)
-    
-    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    keyboard.row('🇬🇧 English', '🇨🇿 Čeština', '🇺🇦 Українська')
-    
-    bot.send_message(message.chat.id, question, reply_markup=keyboard)
-    bot.register_next_step_handler(message, process_limit_and_invite, bot, session_manager, message_builder)
+    # Register next step handler
+    bot.register_next_step_handler(
+        message,
+        process_limit,
+        bot,
+        session_manager
+    )
 
 def process_limit_and_invite(message, bot, session_manager, message_builder):
+    """Process the limit and create an invite link."""
     try:
-        limit = int(message.text.strip())
+        limit = float(message.text.strip().replace(",", "."))
         if limit <= 0:
-            bot.send_message(message.chat.id, get_text('invalid_amount', message.from_user.id))
-            return bot.register_next_step_handler(message, process_limit_and_invite, bot, session_manager, message_builder)
+            raise ValueError
     except ValueError:
-        bot.send_message(message.chat.id, get_text('invalid_amount', message.from_user.id))
+        bot.send_message(
+            message.chat.id,
+            get_text("invalid_amount", message.from_user.id)
+        )
         return bot.register_next_step_handler(message, process_limit_and_invite, bot, session_manager, message_builder)
 
-    user_id = message.from_user.id
-    session_id = session_manager.find_active_session(user_id)
-    if not session_id:
+    # Get the users active session
+    user_sessions = session_manager.get_user_sessions(message.from_user.id)
+    if not user_sessions:
+        bot.send_message(
+            message.chat.id,
+            get_text("no_active_session", message.from_user.id)
+        )
         return
-        
+
+    session_id = user_sessions[0]
     session = session_manager.get_session(session_id)
-    session.session['initiator_limit'] = limit
+    if not session:
+        bot.send_message(
+            message.chat.id,
+            get_text("session_not_found", message.from_user.id)
+        )
+        return
+
+    # Update session with the limit
+    session.initiator_limit = limit
+    session.status = "waiting_for_participant"
     session_manager.save_session(session_id, session)
-    
-    # Create the invitation message with role
+
+    # Create the invitation message
     invite_link = f"https://t.me/{bot.get_me().username}?start={session_id}"
+    other_role = "seller" if session.initiator_role == "buyer" else "buyer"
+    
+    # Get role name in users language
+    other_role_translated = get_text(f"role_{other_role}", message.from_user.id)
+    join_text = "🤝 Join my negotiation as a"
+    
+    forward_text = (
+        f" {join_text} {other_role_translated}!\n\n"
+        f"👉 Click here to join: {invite_link}"
+    )
     
     # Create inline keyboard for sharing
     inline_keyboard = types.InlineKeyboardMarkup()
-    other_role = 'seller' if session.session['initiator_role'] == 'buyer' else 'buyer'
-    forward_text = (
-        f"🤝 {get_text('join_negotiation', user_id)} {get_text(f'role_{other_role}', user_id)}!\n\n"
-        f"{get_text('click_to_join', user_id)}: {invite_link}"
-    )
-    
-    # Use Telegram's native share button
     inline_keyboard.row(
         types.InlineKeyboardButton(
-            "📤 " + get_text('share_with', user_id),
+            "📤 Share with...",
             switch_inline_query=forward_text
         )
     )
     
-    # Send the invitation message with share button
+    # Send the invitation message
     msg = bot.send_message(
         message.chat.id,
         forward_text,
@@ -121,131 +114,129 @@ def process_limit_and_invite(message, bot, session_manager, message_builder):
         disable_web_page_preview=True
     )
     
-    # Pin the forward message for easy access
+    # Pin the message
     try:
         bot.pin_chat_message(message.chat.id, msg.message_id)
     except:
         pass
 
 def process_limit(message, bot, session_manager):
+    """Process the limit for user2."""
     try:
-        limit = int(message.text.strip())
+        limit = float(message.text.strip().replace(",", "."))
         if limit <= 0:
-            bot.send_message(message.chat.id, get_text('invalid_amount', message.from_user.id))
-            return bot.register_next_step_handler(message, process_limit, bot, session_manager)
+            raise ValueError
     except ValueError:
-        bot.send_message(message.chat.id, get_text('invalid_amount', message.from_user.id))
+        if message.text.lower() == 'end':
+            # If user types 'end', end session with no deal
+            session_id = session_manager.find_active_session(message.from_user.id)
+            if session_id:
+                session = session_manager.get_session(session_id)
+                if session:
+                    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+                    start_button = types.KeyboardButton(text="🔄 Start New Negotiation", web_app=None, request_contact=None, request_location=None)
+                    keyboard.row(start_button)
+                    for user_id in [session.initiator_id, session.participant_id]:
+                        bot.send_message(
+                            user_id,
+                            "❌ No deal possible",
+                            reply_markup=keyboard
+                        )
+                    session_manager.delete_session(session_id)
+            return
+        
+        bot.send_message(
+            message.chat.id,
+            get_text("invalid_amount", message.from_user.id)
+        )
         return bot.register_next_step_handler(message, process_limit, bot, session_manager)
 
-    # Find session where user is participant or initiator
-    session_id = None
-    for sid, session in session_manager._sessions.items():
-        if ((session.initiator_id == message.from_user.id or session.invited_id == message.from_user.id) and
-            session.status in ['pending', 'awaiting_updates']):
-            if session.expires_at > datetime.now():
-                session_id = sid
-                break
-
+    # Get session
+    session_id = session_manager.find_active_session(message.from_user.id)
     if not session_id:
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(types.KeyboardButton('🇬🇧 English'))
-        markup.add(types.KeyboardButton('🇨🇿 Čeština'))
-        markup.add(types.KeyboardButton('🇺🇦 Українська'))
-        bot.send_message(message.chat.id, get_text('no_active_session', message.from_user.id), reply_markup=markup)
         return
 
     session = session_manager.get_session(session_id)
     if not session:
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(types.KeyboardButton('🇬🇧 English'))
-        markup.add(types.KeyboardButton('🇨🇿 Čeština'))
-        markup.add(types.KeyboardButton('🇺🇦 Українська'))
-        bot.send_message(message.chat.id, get_text('no_active_session', message.from_user.id), reply_markup=markup)
         return
 
-    # Update the limit for the appropriate user
-    if message.from_user.id == session.initiator_id:
+    # Store limit based on user role
+    if session.initiator_id == message.from_user.id:
         session.initiator_limit = limit
-        session_manager.update_session(session_id, initiator_limit=limit)
     else:
-        session.invited_limit = limit
-        session_manager.update_session(session_id, invited_limit=limit)
+        session.participant_limit = limit
+    
+    session_manager.save_session(session_id, session)
 
     # Check if both limits are set
-    if session.initiator_limit is not None and session.invited_limit is not None:
-        # Determine if there's a deal based on buyer/seller roles
-        if session.initiator_role == 'buyer':
-            buyer_limit = session.initiator_limit
-            seller_limit = session.invited_limit
-        else:
-            buyer_limit = session.invited_limit
-            seller_limit = session.initiator_limit
+    if session.initiator_limit is None or session.participant_limit is None:
+        return
 
-        if buyer_limit >= seller_limit:
-            # Deal successful at seller's price
-            agreed_price = seller_limit
+    # Determine buyer and seller limits
+    if session.initiator_role == "buyer":
+        buyer_limit = session.initiator_limit
+        seller_limit = session.participant_limit
+    else:
+        buyer_limit = session.participant_limit
+        seller_limit = session.initiator_limit
+
+    if buyer_limit >= seller_limit:
+        # Deal successful at seller's price
+        agreed_price = seller_limit
+        keyboard = types.ReplyKeyboardMarkup(is_persistent=True, resize_keyboard=True)
+        start_button = types.KeyboardButton(text="🔄 Start New Negotiation", web_app=None, request_contact=None, request_location=None)
+        keyboard.row(start_button)
+        for user_id in [session.initiator_id, session.participant_id]:
             bot.send_message(
-                message.chat.id,
-                get_text('deal_success', message.from_user.id).format(price=agreed_price)
+                user_id,
+                "🎉 Deal successful!",
+                reply_markup=keyboard
             )
-            if session.initiator_id != message.from_user.id:
-                bot.send_message(
-                    session.initiator_id,
-                    get_text('deal_success', session.initiator_id).format(price=agreed_price)
-                )
-            # Clean up the session
-            session_manager.delete_session(session_id)
-        else:
-            # No deal possible, but allow new bids
-            bot.send_message(message.chat.id, get_text('deal_failed', message.from_user.id))
-            if session.initiator_id != message.from_user.id:
-                bot.send_message(
-                    session.initiator_id,
-                    get_text('deal_failed', session.initiator_id)
-                )
+        session_manager.delete_session(session_id)
+    else:
+        # No deal possible, end round and let both users start new if they want
+        keyboard = types.ReplyKeyboardMarkup(is_persistent=True, resize_keyboard=True)
+        start_button = types.KeyboardButton(text="🔄 Start New Negotiation", web_app=None, request_contact=None, request_location=None)
+        keyboard.row(start_button)
+        for user_id in [session.initiator_id, session.participant_id]:
+            bot.send_message(
+                user_id,
+                "❌ No deal possible",
+                reply_markup=keyboard
+            )
+        session_manager.delete_session(session_id)
+        return
 
 def handle_stop_confirmation(message, bot, session_manager):
-    user_id = message.from_user.id
-    if message.text.lower() == 'end':
-        session_id = session_manager.find_active_session(user_id)
-        if session_id:
-            session_manager.delete_session(session_id)
-            bot.send_message(message.chat.id, get_text('negotiation_ended', user_id))
-        else:
-            bot.send_message(message.chat.id, get_text('no_active_session', user_id))
-    else:
-        bot.send_message(message.chat.id, get_text('negotiation_cancelled', user_id))
+    """Handle confirmation of stopping a negotiation."""
+    if message.text.lower() != get_text("stop_confirm", message.from_user.id).lower():
+        return
 
-def register_forward_handler(bot):
-    @bot.callback_query_handler(func=lambda call: call.data.startswith('forward:'))
-    def forward_callback(call):
-        session_id = call.data.split(':')[1]
-        session = session_manager.get_session(session_id)
-        if not session:
-            bot.answer_callback_query(call.id, "Session not found or expired")
-            return
-            
-        invite_link = f"https://t.me/{bot.get_me().username}?start={session_id}"
-        other_role = 'seller' if session.session['initiator_role'] == 'buyer' else 'buyer'
-        forward_text = (
-            f"🤝 {get_text('join_negotiation', message.from_user.id)} {get_text(f'role_{other_role}', message.from_user.id)}!\n\n"
-            f"{get_text('click_to_join', message.from_user.id)}: {invite_link}"
-        )
-        
+    # Get users active session
+    user_sessions = session_manager.get_user_sessions(message.from_user.id)
+    if not user_sessions:
         bot.send_message(
-            call.message.chat.id,
-            forward_text,
-            disable_web_page_preview=True
+            message.chat.id,
+            get_text("no_active_session", message.from_user.id)
         )
-        bot.answer_callback_query(call.id, "Message ready to forward!")
+        return
 
-def find_active_session(user_id, sessions):
-    for session_id, session in sessions.items():
-        if ((session.initiator_id == user_id or session.invited_id == user_id) and
-            session.status in ['pending', 'awaiting_updates']):
-            if session.expires_at > datetime.now():
-                return session_id
-            else:
-                session.status = 'expired'
-                session_manager.save_session(session_id, session)
-    return None
+    session_id = user_sessions[0]
+    session = session_manager.get_session(session_id)
+    if not session:
+        bot.send_message(
+            message.chat.id,
+            get_text("session_not_found", message.from_user.id)
+        )
+        return
+
+    # Delete the session
+    session_manager.delete_session(session_id)
+
+    # Notify both users
+    for user_id in [session.initiator_id, session.participant_id]:
+        if user_id:  # participant_id might be None
+            bot.send_message(
+                user_id,
+                get_text("negotiation_stopped", user_id)
+            )

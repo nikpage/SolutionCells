@@ -1,16 +1,14 @@
-# 1
 import os
 import logging
 from datetime import datetime
 from telebot import TeleBot
 from message_builder import MessageBuilder
 from session_manager import SessionManager
-from handlers.language import language_command, handle_language_choice
 from handlers.negotiation import process_limit_and_invite, handle_stop_confirmation
 from handlers.commands import start, status_command, cancel_command, help_command, stop_command
 from utils.translations import get_text
 
-BOT_TOKEN = os.getenv('BOT_TOKEN', "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk")
+BOT_TOKEN = "7707543229:AAEfyqpFhSXkwpYhPju_il4_SzS6cy1Izlk"
 
 # Configure logging
 logging.basicConfig(
@@ -44,10 +42,6 @@ def main():
     def handle_start(message):
         start(message, bot, session_manager, message_builder)
 
-    @bot.message_handler(commands=['language'])
-    def handle_language(message):
-        language_command(bot, message)
-
     @bot.message_handler(commands=['status'])
     def handle_status(message):
         status_command(message, bot, session_manager)
@@ -78,10 +72,9 @@ def main():
         else:
             bot.send_message(message.chat.id, get_text('no_active_session', message.from_user.id))
 
-    # Handle language choice responses
-    @bot.message_handler(func=lambda message: message.text in ['🇨🇿 Čeština', '🇬🇧 English', '🇺🇦 Українська'])
-    def handle_lang_choice(message):
-        handle_language_choice(message, bot)
+    @bot.message_handler(func=lambda message: message.text and message.text == "🔄 Start New Negotiation")
+    def handle_start_button(message):
+        start(message, bot, session_manager, message_builder)
 
     logger.info("Starting infinity polling...")
     try:

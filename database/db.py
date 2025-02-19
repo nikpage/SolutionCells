@@ -28,7 +28,7 @@ def init_db():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_preferences (
                 user_id INTEGER PRIMARY KEY,
-                language TEXT DEFAULT 'en'
+                language TEXT NOT NULL DEFAULT 'en'
             )
         ''')
         
